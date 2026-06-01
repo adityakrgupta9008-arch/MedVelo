@@ -3,6 +3,9 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import SOS from "./pages/SOS";
+import SmartScan from "./pages/SmartScan";
+import Hospitals from "./pages/Hospitals";
+import Diagnostics from "./pages/Diagnostics";
 
 export const router = createBrowserRouter([
   {
@@ -20,5 +23,17 @@ export const router = createBrowserRouter([
   {
     path: "/sos",
     Component: SOS,
+  },
+  {
+    path: "/scan",
+    Component: SmartScan,
+  },
+  {
+    path: "/hospitals",
+    Component: Hospitals,
+  },
+  {
+    path: "/diagnostics",
+    Component: Diagnostics,
   },
 ]);

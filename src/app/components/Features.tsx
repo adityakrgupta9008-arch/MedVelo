@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/Card";
 import { Ambulance, Pill, Stethoscope, FileText, Bot } from "lucide-react";
 
@@ -47,14 +48,23 @@ export function Features() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#2C8ED6]/30 bg-white">
-              <CardContent className="p-8">
+              <CardContent className="p-8 flex flex-col h-full">
                 <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-bold text-[#0F172A] mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed flex-1 mb-4">
                   {feature.description}
                 </p>
+                {feature.title === "Generic Medicine Finder" && (
+                  <Link 
+                    to="/scan" 
+                    className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[#0B5FA5] hover:text-[#2C8ED6] transition-colors group/link"
+                  >
+                    Try Smart Scan ⚡️
+                    <span className="group-hover/link:translate-x-1.5 transition-transform inline-block">→</span>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ))}

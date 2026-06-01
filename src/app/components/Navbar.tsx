@@ -20,9 +20,10 @@ export function Navbar() {
         </Link>
         
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#0F172A]">
-          <Link to="#features" className="hover:text-[#0B5FA5] transition-colors">Features</Link>
-          <Link to="#services" className="hover:text-[#0B5FA5] transition-colors">Services</Link>
-          <Link to="#hospitals" className="hover:text-[#0B5FA5] transition-colors">Hospitals</Link>
+          <Link to="/" className="hover:text-[#0B5FA5] transition-colors">Home</Link>
+          <Link to="/scan" className="hover:text-[#0B5FA5] transition-colors">Smart Scan 💊</Link>
+          <Link to="/hospitals" className="hover:text-[#0B5FA5] transition-colors">Hospitals 🏥</Link>
+          <Link to="/diagnostics" className="hover:text-[#0B5FA5] transition-colors">Diagnostics 🧪</Link>
           <Link to="#app" className="hover:text-[#0B5FA5] transition-colors">Mobile App</Link>
         </nav>
 
