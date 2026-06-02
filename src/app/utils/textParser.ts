@@ -77,15 +77,25 @@ export function normalizeOCRText(text: string): string[] {
   return Array.from(new Set(expandedTokens));
 }
 
+// List of common dosage/frequency abbreviations to ignore during drug matching
+const SKIPPED_WORDS = new Set([
+  "mg", "mcg", "g", "ml", "tab", "tabs", "tablet", "tablets", "cap", "caps", "capsule", "capsules",
+  "bd", "tds", "od", "qid", "hs", "prn", "rx", "daily", "once", "twice", "take", "refill", "refills"
+]);
+
 /**
  * Parses raw OCR string and scans for a known brand medicine name.
  * Supports exact matches, overlapping substring matches, and fuzzy matches.
  * Returns the matching brand name in its original DB casing, or null if no match is found.
  */
 export function extractMedicineName(rawText: string): string | null {
+  // 4. Fallback logger to print exact camera scan contents in dev console
+  console.log("Raw Scanned Text:", rawText);
+
   if (!rawText) return null;
 
-  const tokens = normalizeOCRText(rawText);
+  // Normalize text, tokenize, and filter out common dosage metadata
+  const tokens = normalizeOCRText(rawText).filter((token) => !SKIPPED_WORDS.has(token));
   const knownBrands = MOCK_MEDICINES.map((m) => m.brand_name.toLowerCase());
 
   // 1. Exact Match Pass
@@ -98,15 +108,19 @@ export function extractMedicineName(rawText: string): string | null {
     }
   }
 
-  // 2. Substring Overlap Pass (at least 75% length ratio)
+  // 2. Partial 'ilike' / Substring Overlap Match Pass
+  // Matches tokens that are substrings of the brand, or brands that are substrings of the token.
   let bestOverlapBrand: string | null = null;
   let highestOverlapScore = 0;
 
   for (const token of tokens) {
+    if (token.length < 3) continue; // Ensure candidate has minimal length
+
     for (const brand of knownBrands) {
-      if (token.includes(brand) || brand.includes(token)) {
+      if (brand.includes(token) || token.includes(brand)) {
         const overlapScore = Math.min(token.length, brand.length) / Math.max(token.length, brand.length);
-        if (overlapScore >= 0.75 && overlapScore > highestOverlapScore) {
+        // We match if it has at least a 50% length overlap, taking the best match
+        if (overlapScore >= 0.50 && overlapScore > highestOverlapScore) {
           highestOverlapScore = overlapScore;
           bestOverlapBrand = brand;
         }

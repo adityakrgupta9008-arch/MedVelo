@@ -6,6 +6,11 @@ import SOS from "./pages/SOS";
 import SmartScan from "./pages/SmartScan";
 import Hospitals from "./pages/Hospitals";
 import Diagnostics from "./pages/Diagnostics";
+import HospitalFinder from "./pages/HospitalFinder";
+import DiagnosticsHub from "./pages/DiagnosticsHub";
+import DigitalHealthVault from "./pages/DigitalHealthVault";
+import AiHealthcareAssistant from "./pages/AiHealthcareAssistant";
+import { AuthGuard } from "./components/AuthGuard";
 
 export const router = createBrowserRouter([
   {
@@ -22,18 +27,42 @@ export const router = createBrowserRouter([
   },
   {
     path: "/sos",
-    Component: SOS,
+    element: <AuthGuard><SOS /></AuthGuard>,
   },
   {
     path: "/scan",
-    Component: SmartScan,
+    element: <AuthGuard><SmartScan /></AuthGuard>,
   },
   {
     path: "/hospitals",
-    Component: Hospitals,
+    element: <AuthGuard><HospitalFinder /></AuthGuard>,
   },
   {
     path: "/diagnostics",
-    Component: Diagnostics,
+    element: <AuthGuard><Diagnostics /></AuthGuard>,
+  },
+  {
+    path: "/hospitals-finder",
+    element: <AuthGuard><HospitalFinder /></AuthGuard>,
+  },
+  {
+    path: "/diagnostics-hub",
+    element: <AuthGuard><DiagnosticsHub /></AuthGuard>,
+  },
+  {
+    path: "/digital-vault",
+    element: <AuthGuard><DigitalHealthVault /></AuthGuard>,
+  },
+  {
+    path: "/records",
+    element: <AuthGuard><DigitalHealthVault /></AuthGuard>,
+  },
+  {
+    path: "/ai-assistant",
+    element: <AuthGuard><AiHealthcareAssistant /></AuthGuard>,
+  },
+  {
+    path: "/assistant",
+    element: <AuthGuard><AiHealthcareAssistant /></AuthGuard>,
   },
 ]);

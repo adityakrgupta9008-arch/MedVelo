@@ -29,7 +29,7 @@ export function Navbar() {
           <Link to="/scan" className="hover:text-[#0B5FA5] transition-colors">Smart Scan 💊</Link>
           <Link to="/hospitals" className="hover:text-[#0B5FA5] transition-colors">Hospitals 🏥</Link>
           <Link to="/diagnostics" className="hover:text-[#0B5FA5] transition-colors">Diagnostics 🧪</Link>
-          <Link to="#app" className="hover:text-[#0B5FA5] transition-colors">Mobile App</Link>
+          <Link to="/records" className="hover:text-[#0B5FA5] transition-colors">Digital Vault 🔒</Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -102,9 +102,11 @@ export function Navbar() {
               <Button onClick={openAuthModal} variant="ghost" className="hidden md:inline-flex text-slate-700 font-semibold cursor-pointer">
                 Login
               </Button>
-              <Button onClick={openAuthModal} variant="default" className="py-5 px-6 font-bold bg-[#0B5FA5] hover:bg-[#0B5FA5]/95 text-white border-0 rounded-xl cursor-pointer">
-                Get Started
-              </Button>
+              <Link to="/assistant">
+                <Button variant="default" className="py-5 px-6 font-bold bg-[#0B5FA5] hover:bg-[#0B5FA5]/95 text-white border-0 rounded-xl cursor-pointer">
+                  Get Started
+                </Button>
+              </Link>
             </div>
           )}
         </div>

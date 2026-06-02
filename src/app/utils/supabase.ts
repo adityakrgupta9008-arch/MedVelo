@@ -6,13 +6,19 @@ export interface Medicine {
   generic_name: string;
   brand_price: number;
   generic_price: number;
+  brand_mrp_inr?: number;
+  govt_jan_aushadhi_mrp_inr?: number;
+  unit_pack_size?: string;
+  chemical_salt?: string;
+  govt_brand_name?: string;
   dosage: string;
   description: string;
   savings_percentage: number;
   created_at?: string;
+  therapeutic_class?: string;
 }
 
-// Pre-seeded high-fidelity mock database
+// Pre-seeded high-fidelity mock database mirroring Jan Aushadhi scheme parameters
 export const MOCK_MEDICINES: Medicine[] = [
   {
     id: "m1",
@@ -20,6 +26,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Atorvastatin",
     brand_price: 84.50,
     generic_price: 12.00,
+    brand_mrp_inr: 240.00,
+    govt_jan_aushadhi_mrp_inr: 32.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "10mg",
     description: "Used to treat high cholesterol and lower the risk of stroke or heart attack.",
     savings_percentage: 85.80,
@@ -30,6 +39,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Ibuprofen",
     brand_price: 14.99,
     generic_price: 4.50,
+    brand_mrp_inr: 95.00,
+    govt_jan_aushadhi_mrp_inr: 18.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "200mg",
     description: "Nonsteroidal anti-inflammatory drug (NSAID) used to reduce fever and treat pain.",
     savings_percentage: 69.98,
@@ -40,6 +52,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Metformin",
     brand_price: 45.00,
     generic_price: 8.00,
+    brand_mrp_inr: 110.00,
+    govt_jan_aushadhi_mrp_inr: 16.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "500mg",
     description: "Oral diabetes medicine that helps control blood sugar levels for Type 2 Diabetes.",
     savings_percentage: 82.22,
@@ -50,6 +65,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Levothyroxine",
     brand_price: 38.00,
     generic_price: 10.00,
+    brand_mrp_inr: 135.00,
+    govt_jan_aushadhi_mrp_inr: 25.00,
+    unit_pack_size: "per 100 Tablets pack",
     dosage: "50mcg",
     description: "Manmade thyroid hormone used to treat hypothyroidism (low thyroid hormone).",
     savings_percentage: 73.68,
@@ -60,6 +78,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Ranitidine",
     brand_price: 22.50,
     generic_price: 5.00,
+    brand_mrp_inr: 68.00,
+    govt_jan_aushadhi_mrp_inr: 11.50,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "150mg",
     description: "H2 blocker that decreases the amount of acid produced in the stomach.",
     savings_percentage: 77.78,
@@ -70,6 +91,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Amoxicillin",
     brand_price: 28.00,
     generic_price: 7.50,
+    brand_mrp_inr: 120.00,
+    govt_jan_aushadhi_mrp_inr: 28.00,
+    unit_pack_size: "per 10 Capsules pack",
     dosage: "250mg",
     description: "Penicillin antibiotic that fights bacteria in the body, used for infections.",
     savings_percentage: 73.21,
@@ -80,6 +104,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Sertraline",
     brand_price: 65.00,
     generic_price: 15.00,
+    brand_mrp_inr: 185.00,
+    govt_jan_aushadhi_mrp_inr: 34.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "50mg",
     description: "Selective serotonin reuptake inhibitor (SSRI) antidepressant.",
     savings_percentage: 76.92,
@@ -90,6 +117,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Clopidogrel",
     brand_price: 95.00,
     generic_price: 18.00,
+    brand_mrp_inr: 250.00,
+    govt_jan_aushadhi_mrp_inr: 38.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "75mg",
     description: "Platelet inhibitor used to prevent blood clots in people with cardiovascular disease.",
     savings_percentage: 81.05,
@@ -100,6 +130,9 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Montelukast",
     brand_price: 58.00,
     generic_price: 12.50,
+    brand_mrp_inr: 160.00,
+    govt_jan_aushadhi_mrp_inr: 32.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "10mg",
     description: "Leukotriene receptor antagonist used for chronic asthma and seasonal allergies.",
     savings_percentage: 78.45,
@@ -110,11 +143,20 @@ export const MOCK_MEDICINES: Medicine[] = [
     generic_name: "Esomeprazole",
     brand_price: 78.00,
     generic_price: 14.00,
+    brand_mrp_inr: 175.00,
+    govt_jan_aushadhi_mrp_inr: 36.00,
+    unit_pack_size: "per 10 Tablets pack",
     dosage: "20mg",
     description: "Proton pump inhibitor (PPI) that decreases the amount of acid produced in the stomach.",
     savings_percentage: 82.05,
   }
 ];
+
+// Dynamically enhance MOCK_MEDICINES with Jan Aushadhi PMBJP schema mapping
+MOCK_MEDICINES.forEach((med) => {
+  med.chemical_salt = med.generic_name;
+  med.govt_brand_name = med.generic_name + " PMBJP";
+});
 
 class MockQueryBuilder<T> {
   private data: T[];

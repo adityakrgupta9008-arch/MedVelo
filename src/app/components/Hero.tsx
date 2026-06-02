@@ -52,8 +52,8 @@ export function Hero() {
                   <AlertTriangle className="w-5 h-5" />
                   Activate SOS Emergency
                 </Button>
-                <Button onClick={handleDownload} variant="outline" size="lg" className="gap-2 bg-white">
-                  Download App
+                <Button onClick={() => navigate('/assistant')} variant="outline" size="lg" className="gap-2 bg-white cursor-pointer">
+                  AI Healthcare Assistance 🤖
                 </Button>
               </div>
             </motion.div>

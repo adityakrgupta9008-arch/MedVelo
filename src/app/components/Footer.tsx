@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { Twitter, Linkedin, Facebook, Instagram } from "lucide-react";
 import logoImg from "../../imports/Gemini_Generated_Image_jbsyfyjbsyfyjbsy.png";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -38,10 +38,10 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-6">Services</h4>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Emergency SOS</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Medicine Finder</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Home Diagnostics</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Digital Prescriptions</a></li>
+              <li><Link to="/sos" className="hover:text-white transition-colors">Emergency SOS</Link></li>
+              <li><Link to="/scan" className="hover:text-white transition-colors">Medicine Finder</Link></li>
+              <li><Link to="/diagnostics" className="hover:text-white transition-colors">Home Diagnostics</Link></li>
+              <li><Link to="/records" className="hover:text-white transition-colors">Digital Prescriptions</Link></li>
             </ul>
           </div>
 
@@ -50,7 +50,7 @@ export function Footer() {
             <ul className="space-y-4 text-sm">
               <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Hospitals Network</a></li>
+              <li><Link to="/hospitals" className="hover:text-white transition-colors">Hospitals Network</Link></li>
               <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>

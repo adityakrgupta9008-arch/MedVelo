@@ -134,43 +134,27 @@ export function MedicineScanner({ onScanSuccess, onCancel }: MedicineScannerProp
     reader.readAsDataURL(file);
   };
 
-  // OCR Processing Logic using Tesseract.js
+  // Multimodal Visual Handover to Gemini AI
   const runOCR = async (imageSrc: string) => {
     setIsProcessing(true);
-    setProcessingProgress(0);
-    setStatusText("Loading AI engine...");
+    setProcessingProgress(50);
+    setStatusText("Preparing prescription image for Gemini Multimodal AI...");
 
     try {
-      const worker = await createWorker("eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            const progress = Math.round(m.progress * 100);
-            setProcessingProgress(progress);
-            setStatusText(`Scanning labels: ${progress}%`);
-          } else {
-            // Translate status keys into user-friendly messages
-            const statusMap: Record<string, string> = {
-              "loading tesseract core": "Booting scanner core...",
-              "initializing api": "Configuring medical filters...",
-              "recognizing text": "Extracting chemical names...",
-            };
-            setStatusText(statusMap[m.status] || "Analyzing bottle...");
-          }
-        },
-      });
-
-      const { data: { text } } = await worker.recognize(imageSrc);
-      await worker.terminate();
-
-      // Dispatch OCR text
-      setIsProcessing(false);
-      onScanSuccess(text);
-    } catch (err: any) {
-      console.error("Tesseract error:", err);
-      toast.error("OCR analysis failed. Please try a clearer picture.");
-      setIsProcessing(false);
+      // Small artificial delay to show state transition
+      await new Promise((resolve) => setTimeout(resolve, 600));
       
-      // Restart camera to let them try again
+      setProcessingProgress(100);
+      setStatusText("Analyzing cursive handwriting and chemical parameters...");
+      
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      
+      setIsProcessing(false);
+      onScanSuccess(imageSrc);
+    } catch (err: any) {
+      console.error("Vision packaging error:", err);
+      toast.error("Vision processing failed. Please try again.");
+      setIsProcessing(false);
       startCamera();
     }
   };
