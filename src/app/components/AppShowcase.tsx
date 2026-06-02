@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "./ui/Button";
+import { Button } from "./ui/button";
 import { CheckCircle2, Download } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
