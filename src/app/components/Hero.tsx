@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "./ui/Button";
-import { Card, CardContent } from "./ui/Card";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 import { AlertTriangle, Clock, MapPin, Pill, FileText, HeartPulse, Activity } from "lucide-react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
