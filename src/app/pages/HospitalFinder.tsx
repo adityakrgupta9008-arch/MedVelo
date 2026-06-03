@@ -111,7 +111,7 @@ export default function HospitalFinder() {
   const [selectedDistrict, setSelectedDistrict] = useState<string>("Kolkata");
 
   useEffect(() => {
-    fetchHospitals(selectedState, selectedDistrict);
+    handleSearch();
   }, [selectedState, selectedDistrict]);
 
   const handleStateChange = (stateName: string) => {
@@ -125,15 +125,16 @@ export default function HospitalFinder() {
     }
   };
 
-  const fetchHospitals = async (stateVal: string, districtVal: string) => {
+  const handleSearch = async () => {
+    setHospitalsData([]); 
     setIsLoading(true);
     const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
     const isRealKey = geminiKey && geminiKey !== "your_actual_copied_gemini_api_key";
 
-    if (isRealKey) {
-      try {
-        const promptText = `You are an Indian medical directory service. List real, actual hospitals explicitly located inside the district of ${selectedDistrict}, ${selectedState}. Generate a clean, realistic JSON array of 5 prominent, real hospitals in the region specified by the user. The region is: ${selectedDistrict}, ${selectedState}.
-If no region is specified, provide top institutions from Kolkata, West Bengal and Ranchi/Jamshedpur, Jharkhand. 
+    // Strict clean prompt with backticks string interpolation matching the request
+    const cleanPrompt = `You are a strict Indian medical directory. Return a raw JSON array of real hospitals located completely within the district of ${selectedDistrict}, State: ${selectedState}. If the district is Giridih, return local centers like Sadar Hospital Giridih or Navjeevan. Do not include facilities from Kolkata or Jamshedpur.`;
+
+    const fullPrompt = `${cleanPrompt}
 For each hospital, include these exact JSON object fields:
 {
   "hospital_name": "Name of the real hospital (e.g., SSKM Hospital, Apollo Multispecialty, RIMS, TMH)",
@@ -148,11 +149,13 @@ For each hospital, include these exact JSON object fields:
 }
 Return strictly the raw JSON string array. Do not wrap it in markdown code blocks, backticks, or the text 'json'.`;
 
+    if (isRealKey) {
+      try {
         const payload = {
-          prompt: `List real, actual hospitals explicitly located inside the district of ${selectedDistrict}, ${selectedState}.`,
+          prompt: cleanPrompt,
           contents: [{
             parts: [{
-              text: promptText
+              text: fullPrompt
             }]
           }]
         };
@@ -168,7 +171,6 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
           }
         );
 
-
         if (!response.ok) {
           throw new Error(`Gemini HTTP error! status: ${response.status}`);
         }
@@ -180,7 +182,7 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
         const parsed = JSON.parse(cleanText);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setHospitalsData(parsed);
-          toast.success(`Successfully loaded dynamic hospitals directory for ${districtVal}, ${stateVal}!`, { icon: "🤖" });
+          toast.success(`Successfully loaded dynamic hospitals directory for ${selectedDistrict}, ${selectedState}!`, { icon: "🤖" });
           setIsLoading(false);
           return;
         }
@@ -192,14 +194,15 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
     // Local fallback database
     setTimeout(() => {
       const filtered = FALLBACK_HOSPITALS.filter(
-        h => h.location.toLowerCase().includes(districtVal.toLowerCase()) ||
-             h.location.toLowerCase().includes(stateVal.toLowerCase())
+        h => h.location.toLowerCase().includes(selectedDistrict.toLowerCase()) ||
+             h.location.toLowerCase().includes(selectedState.toLowerCase())
       );
       setHospitalsData(filtered.length > 0 ? filtered : FALLBACK_HOSPITALS);
       setIsLoading(false);
-      toast.info(`Local fallback directory loaded for ${districtVal}, ${stateVal}.`, { icon: "🛡️" });
+      toast.info(`Local fallback directory loaded for ${selectedDistrict}, ${selectedState}.`, { icon: "🛡️" });
     }, 800);
   };
+
 
   // Filter local state based on search query
   const filteredHospitals = hospitalsData.filter(item => {

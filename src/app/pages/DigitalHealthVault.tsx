@@ -25,32 +25,35 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 
 interface MedicalRecord {
-  patientName: string;
-  consultationDate: string;
-  diagnosisMarkers: string[];
-  observations: string;
-  fileName: string;
+  hospital_name: string;
+  doctor_name: string;
+  date: string;
+  tests: string;
+  medicine_prescribed: string;
+  next_visit: string;
 }
 
 const FALLBACK_RECORDS: MedicalRecord[] = [
   {
-    patientName: "Aditya Kr Gupta",
-    consultationDate: "2026-05-15",
-    diagnosisMarkers: ["HbA1c: 6.2%", "Fasting Blood Sugar: 110 mg/dL", "TSH: 2.4 mIU/L"],
-    observations: "Mild glucose intolerance. Advised dietary modifications, regular walking, and repeat HbA1c screening after 3 months.",
-    fileName: "Routine_Checkup_May2026.png"
+    hospital_name: "Apollo Multispecialty",
+    doctor_name: "Dr. Sandip Ghosh",
+    date: "2026-05-15",
+    tests: "HbA1c, Fasting Blood Sugar",
+    medicine_prescribed: "Metformin 500mg",
+    next_visit: "2026-08-15"
   },
   {
-    patientName: "Aditya Kr Gupta",
-    consultationDate: "2026-03-10",
-    diagnosisMarkers: ["Total Cholesterol: 195 mg/dL", "LDL: 115 mg/dL", "Triglycerides: 140 mg/dL"],
-    observations: "Lipid parameters are within borderline high limits. Patient advised to reduce saturated fat intake and follow up.",
-    fileName: "Lipid_Profile_March2026.jpg"
+    hospital_name: "Medica Superspecialty",
+    doctor_name: "Dr. Alok Kumar",
+    date: "2026-03-10",
+    tests: "Lipid Profile, Liver Function",
+    medicine_prescribed: "Atorvastatin 10mg",
+    next_visit: "2026-06-10"
   }
 ];
 
 export default function DigitalHealthVault() {
-  const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [vaultRecords, setVaultRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,10 +61,11 @@ export default function DigitalHealthVault() {
   useEffect(() => {
     // Seed initial sandbox files
     setTimeout(() => {
-      setRecords(FALLBACK_RECORDS);
+      setVaultRecords(FALLBACK_RECORDS);
       setIsLoading(false);
     }, 800);
   }, []);
+
 
   const fileToGenerativePart = (base64Str: string, mimeType: string) => {
     return {
@@ -92,10 +96,9 @@ export default function DigitalHealthVault() {
 
       if (isRealKey) {
         try {
-          const promptPart = {
-            text: "Analyze this patient health record document image. Extract the patient name, consultation date, list of key diagnosis markers, and clear clinical observations. Standardize the output as an ABDM (Ayushman Bharat Digital Mission) compliant summary object in structured JSON formatting."
-          };
+          const prompt = "Analyze this medical document image asset. Extract data parameters and return strictly a raw, valid JSON object matching this schema. Do not include markdown formatting: { \"hospital_name\": \"...\", \"doctor_name\": \"...\", \"date\": \"YYYY-MM-DD\", \"tests\": \"...\", \"medicine_prescribed\": \"...\", \"next_visit\": \"...\" }";
           
+          const promptPart = { text: prompt };
           const imagePart = fileToGenerativePart(base64Str, mimeType);
           
           const payload = {
@@ -122,17 +125,8 @@ export default function DigitalHealthVault() {
           const responseData = await response.json();
           const aiResponseText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
           
-          // Strip backticks
-          const cleanText = aiResponseText.replace(/```json|```/g, "").trim();
-          const parsed = JSON.parse(cleanText);
-          
-          const extractedRecord: MedicalRecord = {
-            patientName: parsed.patientName || parsed.patient_name || "Patient Profile",
-            consultationDate: parsed.consultationDate || parsed.consultation_date || new Date().toISOString().split('T')[0],
-            diagnosisMarkers: parsed.diagnosisMarkers || parsed.diagnosis_markers || ["Markers extracted from report"],
-            observations: parsed.observations || parsed.clinical_observations || "Normal parameters observed.",
-            fileName: file.name
-          };
+          const geminiResponseText = aiResponseText.replace(/```json|```/g, "").trim();
+          const parsedResult = JSON.parse(geminiResponseText);
 
           // Confetti burst
           confetti({
@@ -141,7 +135,7 @@ export default function DigitalHealthVault() {
             origin: { y: 0.6 }
           });
 
-          setRecords(prev => [extractedRecord, ...prev]);
+          setVaultRecords(prev => [...prev, parsedResult]);
           toast.success("Multimodal vision analyzed and digitized past medical report!", { icon: "🤖" });
           setIsAnalyzing(false);
           return;
@@ -153,11 +147,12 @@ export default function DigitalHealthVault() {
       // Mock analysis fallback
       setTimeout(() => {
         const mockExtracted: MedicalRecord = {
-          patientName: "Aditya Kr Gupta",
-          consultationDate: new Date().toISOString().split('T')[0],
-          diagnosisMarkers: ["Hemoglobin: 14.5 g/dL", "RBC Count: 4.8 million/mcL", "Platelets: 250,000 /mcL"],
-          observations: "NABL certified diagnostic profile results. All hematological parameters are within reference intervals. No clinical anomalies detected.",
-          fileName: file.name
+          hospital_name: "Sadar Hospital Giridih",
+          doctor_name: "Dr. Amit Mukherjee",
+          date: new Date().toISOString().split('T')[0],
+          tests: "Complete Blood Count, HbA1c",
+          medicine_prescribed: "Metformin 500mg",
+          next_visit: "2026-09-10"
         };
         
         // Confetti burst
@@ -167,7 +162,7 @@ export default function DigitalHealthVault() {
           origin: { y: 0.6 }
         });
 
-        setRecords(prev => [mockExtracted, ...prev]);
+        setVaultRecords(prev => [...prev, mockExtracted]);
         toast.success("Health record digitized and secured in ABDM vault.", { icon: "🛡️" });
         setIsAnalyzing(false);
       }, 1500);
@@ -176,9 +171,10 @@ export default function DigitalHealthVault() {
   };
 
   const deleteRecord = (indexToDelete: number) => {
-    setRecords(prev => prev.filter((_, idx) => idx !== indexToDelete));
+    setVaultRecords(prev => prev.filter((_, idx) => idx !== indexToDelete));
     toast.success("Medical record removed from digital vault.");
   };
+
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-900 bg-slate-50/50">
@@ -280,7 +276,6 @@ export default function DigitalHealthVault() {
                   </p>
                 </div>
               </div>
-
             </div>
 
             {/* RIGHT COLUMN: DIGITAL CHRONOLOGICAL TIMELINE */}
@@ -288,7 +283,7 @@ export default function DigitalHealthVault() {
               
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  Personal Digital Timeline ({records.length} Records)
+                  Personal Digital Timeline ({vaultRecords.length} Records)
                 </h3>
               </div>
 
@@ -308,71 +303,49 @@ export default function DigitalHealthVault() {
                     </div>
                   ))}
                 </div>
-              ) : records.length > 0 ? (
-                /* Dynamic Timeline List */
-                <div className="relative border-l-2 border-slate-200 pl-6 ml-3 space-y-8">
-                  {records.map((record, index) => (
-                    <div key={index} className="relative group">
-                      
-                      {/* Timeline circle beacon */}
-                      <span className="absolute -left-9 top-1.5 w-4.5 h-4.5 rounded-full bg-[#0B5FA5] border-4 border-white shadow-[0_0_12px_rgba(11,95,165,0.4)] group-hover:scale-110 transition-transform"></span>
-
-                      <Card className="border border-slate-100 shadow-md hover:shadow-xl hover:border-blue-500/20 bg-white overflow-hidden relative transition-all duration-300">
-                        {/* Colored border tag */}
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-[#0B5FA5]"></div>
-                        
-                        <CardHeader className="pb-2 pt-4 pl-6 pr-6 flex flex-row justify-between items-start gap-4">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 mb-1">
-                              <Calendar className="h-3.5 w-3.5" />
-                              Consultation: {record.consultationDate}
+              ) : vaultRecords.length > 0 ? (
+                /* Dynamic Table Block */
+                <div className="overflow-x-auto bg-white rounded-2xl border border-slate-150 shadow-md">
+                  <table className="min-w-full border text-left text-xs">
+                    <thead>
+                      <tr className="bg-gray-100 border-b">
+                        <th className="px-4 py-3 text-slate-700 font-bold">Hospital Name</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold">Dr Name</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold">Date</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold">Tests</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold">Medicine Prescribed</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold">Next Visit</th>
+                        <th className="px-4 py-3 text-slate-700 font-bold text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {vaultRecords.map((row, i) => (
+                        <tr key={i} className="border-b hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 font-semibold text-slate-800">{row.hospital_name}</td>
+                          <td className="px-4 py-3 font-medium">{row.doctor_name}</td>
+                          <td className="px-4 py-3 font-mono text-slate-500">{row.date}</td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100 text-[10px]">
+                              {row.tests}
                             </span>
-                            <CardTitle className="text-base font-black text-[#0F172A] truncate">
-                              {record.fileName}
-                            </CardTitle>
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteRecord(index)}
-                            className="rounded-full h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 shrink-0"
-                            title="Remove Document"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </CardHeader>
-
-                        <CardContent className="p-6 pt-0 pl-6 space-y-4">
-                          {/* Patient name row */}
-                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                            Patient Name: <span className="text-slate-800 font-extrabold">{record.patientName}</span>
-                          </div>
-
-                          {/* Diagnosis markers */}
-                          <div className="flex flex-wrap gap-1.5">
-                            {record.diagnosisMarkers.map((marker, mIdx) => (
-                              <span 
-                                key={mIdx}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50/50 text-[#0B5FA5] text-[10px] font-bold border border-blue-100/50"
-                              >
-                                <Activity className="h-3 w-3 shrink-0" />
-                                {marker}
-                              </span>
-                            ))}
-                          </div>
-
-                          {/* Clinical Observations */}
-                          <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl text-xs text-slate-600 leading-relaxed relative">
-                            <span className="font-extrabold text-[9px] uppercase tracking-wider text-slate-400 block mb-1">
-                              AI Clinical Observation Summary
-                            </span>
-                            <p>{record.observations}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="px-4 py-3 font-medium">{row.medicine_prescribed}</td>
+                          <td className="px-4 py-3 font-mono text-slate-555">{row.next_visit}</td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteRecord(i)}
+                              className="rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-2 cursor-pointer h-8 w-8"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 /* Empty state */
@@ -394,6 +367,7 @@ export default function DigitalHealthVault() {
             </div>
 
           </div>
+
 
         </div>
       </main>

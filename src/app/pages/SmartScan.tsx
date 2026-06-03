@@ -68,7 +68,7 @@ export default function SmartScan() {
       try {
         const { data, error } = await supabase
           .from('medicines')
-          .select('id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class')
+          .select('brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr')
           .in('brand_name', ['Betaloc 100mg', 'Cimetidine', 'Dorzolamidum', 'Oxprelol']);
 
         if (error) throw error;
@@ -111,7 +111,7 @@ export default function SmartScan() {
       try {
         const { data, error } = await supabase
           .from('medicines')
-          .select('id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class')
+          .select('brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr')
           .in('brand_name', ['Duco Soap', 'Lyconeon Syrup', 'Hicon 200', 'Exoment C', 'Lulimac Cream', 'Tinea Go-B']);
 
         if (error) throw error;
@@ -354,7 +354,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           // Dynamic query matching on the 'chemical_salt' string value
           const { data, error } = await supabase
             .from("medicines")
-            .select("id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class, chemical_salt, dosage, description")
+            .select("brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr")
             .ilike("chemical_salt", `%${item.chemical_salt}%`);
 
           if (error) {
@@ -415,7 +415,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           for (const drugName of targetDrugs) {
             const { data, error } = await supabase
               .from("medicines")
-              .select("id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class, chemical_salt, dosage, description")
+              .select("brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr")
               .ilike("brand_name", `%${drugName}%`);
 
             if (error) {

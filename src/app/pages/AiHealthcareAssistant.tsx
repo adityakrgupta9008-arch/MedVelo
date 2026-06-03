@@ -90,14 +90,21 @@ export default function AiHealthcareAssistant() {
 
     if (isRealKey) {
       try {
+        const contextualPrompt = `You are MedVelo's automated AI Healthcare Assistant. 
+Address the following symptom query completely: "${userMessage.text}".
+You must follow these scope protocols:
+1. Provide a clear symptom assessment guide for issues like cough, cold, fever, or body pain.
+2. Perform an active generic chemical salt analysis.
+3. Detail cost tracking in Indian Rupee (₹) price scales.
+4. Match alternative choices available under the PMBJP generic scheme.
+
+End response with: "**Disclaimer: I am an AI advisor, not a doctor. Please consult a registered medical professional for official clinical diagnosis.**"`;
+
         const payload = {
           contents: [{
             role: "user",
-            parts: [{ text: userMessage.text }]
-          }],
-          systemInstruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }]
-          }
+            parts: [{ text: contextualPrompt }]
+          }]
         };
 
         const response = await fetch(
