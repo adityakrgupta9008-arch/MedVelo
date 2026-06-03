@@ -18,6 +18,36 @@ import { Button } from "../app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
 import { toast } from "sonner";
 
+async function sendWelcomeEmail(userEmail: string, userName: string) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'MedVelo Welcome <onboarding@resend.dev>',
+        to: [userEmail],
+        subject: `Welcome to MedVelo, ${userName}! 🩺 Let’s simplify your healthcare bills together.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 20px; rounded-xl: 12px;">
+            <h2 style="color: #2563eb;">Thank you for joining the MedVelo family!</h2>
+            <p>Dear <strong>${userName}</strong>,</p>
+            <p>Thank you so much for completing your onboarding questionnaire. Your trust and customer satisfaction are our absolute highest priorities.</p>
+            <p>Whether you are scanning a handwritten prescription to check affordable generic chemical salts or searching for local hospitals in districts like Giridih and Dhanbad, MedVelo is here to serve you 24/7.</p>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #64748b;"><strong>Disclaimer:</strong> MedVelo is an AI advisor, not a doctor. Please consult a registered medical professional for official clinical diagnosis.</p>
+            <p style="font-size: 14px; font-weight: bold; margin-top: 20px;">Aditya Gupta<br><span style="font-size: 12px; font-weight: normal; color: #64748b;">Founder, MedVelo</span></p>
+          </div>
+        `
+      })
+    });
+  } catch (error) {
+    console.error('Email pipeline failed silently:', error);
+  }
+}
+
 export function UserProfileForm() {
   const { user, profile, refreshProfile, isMockMode } = useAuth();
   
@@ -146,6 +176,7 @@ export function UserProfileForm() {
         }));
         
         await refreshProfile();
+        await sendWelcomeEmail(user.email || "", fullName);
         toast.success("Health profile onboarding completed (Sandbox Mode)!", {
           icon: "🤖"
         });
@@ -159,10 +190,12 @@ export function UserProfileForm() {
         if (error) throw error;
         
         await refreshProfile();
+        await sendWelcomeEmail(user.email || "", fullName);
         toast.success("Health profile onboarding successfully completed!", {
           icon: "🏥"
         });
       }
+
     } catch (err: any) {
       console.error("Profile onboarding transaction failed:", err);
       toast.error(err.message || "Failed to commit profile updates.");

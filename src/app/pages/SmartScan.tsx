@@ -68,7 +68,7 @@ export default function SmartScan() {
       try {
         const { data, error } = await supabase
           .from('medicines')
-          .select('*')
+          .select('id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class')
           .in('brand_name', ['Betaloc 100mg', 'Cimetidine', 'Dorzolamidum', 'Oxprelol']);
 
         if (error) throw error;
@@ -78,7 +78,7 @@ export default function SmartScan() {
           const mappedRows = data.map(item => ({
             id: item.id,
             brand_name: item.brand_name,
-            generic_name: item.govt_brand_name || `${item.brand_name} Generic`,
+            generic_name: item.generic_name || `${item.brand_name} Generic`,
             brand_mrp_inr: Number(item.brand_mrp_inr),
             govt_jan_aushadhi_mrp_inr: Number(item.govt_jan_aushadhi_mrp_inr),
             unit_pack_size: item.unit_pack_size || "10s",
@@ -111,7 +111,7 @@ export default function SmartScan() {
       try {
         const { data, error } = await supabase
           .from('medicines')
-          .select('*')
+          .select('id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class')
           .in('brand_name', ['Duco Soap', 'Lyconeon Syrup', 'Hicon 200', 'Exoment C', 'Lulimac Cream', 'Tinea Go-B']);
 
         if (error) throw error;
@@ -121,7 +121,7 @@ export default function SmartScan() {
           const mappedRows = data.map(item => ({
             id: item.id,
             brand_name: item.brand_name,
-            generic_name: item.govt_brand_name || `${item.brand_name} Generic`,
+            generic_name: item.generic_name || `${item.brand_name} Generic`,
             brand_mrp_inr: Number(item.brand_mrp_inr),
             govt_jan_aushadhi_mrp_inr: Number(item.govt_jan_aushadhi_mrp_inr),
             unit_pack_size: item.unit_pack_size || "10s",
@@ -135,6 +135,7 @@ export default function SmartScan() {
 
           setScannedMedicines(mappedRows);
           setMatchedMedicine(mappedRows[0]);
+
           setView("result");
           toast.success(`Matched ${mappedRows.length} dermatological medicines!`, { icon: "🧴" });
         } else {
@@ -353,7 +354,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           // Dynamic query matching on the 'chemical_salt' string value
           const { data, error } = await supabase
             .from("medicines")
-            .select("*")
+            .select("id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class, chemical_salt, dosage, description")
             .ilike("chemical_salt", `%${item.chemical_salt}%`);
 
           if (error) {
@@ -366,7 +367,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           const combinedMedicine: Medicine = {
             id: dbRow?.id || String(Math.random()),
             brand_name: item.brand_detected || "Prescribed Brand",
-            generic_name: dbRow?.govt_brand_name || `Jan Aushadhi ${item.chemical_salt}`,
+            generic_name: dbRow?.generic_name || `Jan Aushadhi ${item.chemical_salt}`,
             brand_mrp_inr: Number(item.estimated_market_mrp || 0),
             govt_jan_aushadhi_mrp_inr: Number(dbRow?.govt_jan_aushadhi_mrp_inr || (Number(item.estimated_market_mrp || 0) * 0.3)),
             unit_pack_size: dbRow?.unit_pack_size || "10s",
@@ -379,6 +380,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
             description: dbRow?.description || `FDA bioequivalent PMBJP generic formulation matching ${item.chemical_salt}.`,
             savings_percentage: Number((((Number(item.estimated_market_mrp || 0) - Number(dbRow?.govt_jan_aushadhi_mrp_inr || (Number(item.estimated_market_mrp || 0) * 0.3))) / Number(item.estimated_market_mrp || 1)) * 100).toFixed(2))
           };
+
 
           if (!medicinesList.some(m => m.id === combinedMedicine.id)) {
             medicinesList.push(combinedMedicine);
@@ -413,7 +415,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           for (const drugName of targetDrugs) {
             const { data, error } = await supabase
               .from("medicines")
-              .select("*")
+              .select("id, brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr, unit_pack_size, therapeutic_class, chemical_salt, dosage, description")
               .ilike("brand_name", `%${drugName}%`);
 
             if (error) {
@@ -426,7 +428,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
             const combinedMedicine: Medicine = {
               id: dbRow?.id || String(Math.random()),
               brand_name: dbRow?.brand_name || drugName,
-              generic_name: dbRow?.govt_brand_name || `${drugName} Generic Equiv`,
+              generic_name: dbRow?.generic_name || `${drugName} Generic Equiv`,
               brand_mrp_inr: Number(dbRow?.brand_mrp_inr || 0),
               govt_jan_aushadhi_mrp_inr: Number(dbRow?.govt_jan_aushadhi_mrp_inr || 0),
               unit_pack_size: dbRow?.unit_pack_size || "per 10 Tablets pack",

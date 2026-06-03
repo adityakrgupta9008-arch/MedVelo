@@ -10,7 +10,6 @@ export interface Medicine {
   govt_jan_aushadhi_mrp_inr?: number;
   unit_pack_size?: string;
   chemical_salt?: string;
-  govt_brand_name?: string;
   dosage: string;
   description: string;
   savings_percentage: number;
@@ -155,7 +154,6 @@ export const MOCK_MEDICINES: Medicine[] = [
 // Dynamically enhance MOCK_MEDICINES with Jan Aushadhi PMBJP schema mapping
 MOCK_MEDICINES.forEach((med) => {
   med.chemical_salt = med.generic_name;
-  med.govt_brand_name = med.generic_name + " PMBJP";
 });
 
 class MockQueryBuilder<T> {

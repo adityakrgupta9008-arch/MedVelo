@@ -5,10 +5,12 @@ import logoImg from "../../imports/Gemini_Generated_Image_jbsyfyjbsyfyjbsy.png";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useAuth } from "../utils/auth";
 import { toast } from "sonner";
+import { Menu, X } from "lucide-react";
 
 export function Navbar() {
   const { user, profile, openAuthModal, logOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -109,8 +111,69 @@ export function Navbar() {
               </Link>
             </div>
           )}
+
+          {/* Mobile hamburger menu toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-slate-700 hover:text-[#0B5FA5] transition-colors focus:outline-none cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Drawer Menu Container */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-slate-100 py-4 px-6 flex flex-col gap-4 shadow-lg">
+          <Link 
+            to="/" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
+          >
+            Home
+          </Link>
+          <Link 
+            to="/scan" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
+          >
+            Smart Scan 💊
+          </Link>
+          <Link 
+            to="/hospitals" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
+          >
+            Hospitals 🏥
+          </Link>
+          <Link 
+            to="/diagnostics" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
+          >
+            Diagnostics 🧪
+          </Link>
+          <Link 
+            to="/records" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
+          >
+            Digital Vault 🔒
+          </Link>
+          {!user && (
+            <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+              <Button 
+                onClick={() => { setMobileMenuOpen(false); openAuthModal(); }} 
+                variant="ghost" 
+                className="w-full text-slate-700 font-semibold cursor-pointer justify-start px-0"
+              >
+                Login
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

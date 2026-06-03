@@ -115,6 +115,7 @@ export default function HospitalFinder() {
   }, [selectedState, selectedDistrict]);
 
   const handleStateChange = (stateName: string) => {
+    setHospitalsData([]); // Instantly flushes old Kolkata/Jamshedpur cards out of view
     setSelectedState(stateName);
     const districts = STATE_DISTRICT_MAP[stateName] || [];
     if (districts.length > 0) {
@@ -131,7 +132,7 @@ export default function HospitalFinder() {
 
     if (isRealKey) {
       try {
-        const promptText = `You are an Indian medical directory service. Generate a clean, realistic JSON array of 5 prominent, real hospitals in the region specified by the user. The region is: ${districtVal}, ${stateVal}.
+        const promptText = `You are an Indian medical directory service. List real, actual hospitals explicitly located inside the district of ${selectedDistrict}, ${selectedState}. Generate a clean, realistic JSON array of 5 prominent, real hospitals in the region specified by the user. The region is: ${selectedDistrict}, ${selectedState}.
 If no region is specified, provide top institutions from Kolkata, West Bengal and Ranchi/Jamshedpur, Jharkhand. 
 For each hospital, include these exact JSON object fields:
 {
@@ -148,6 +149,7 @@ For each hospital, include these exact JSON object fields:
 Return strictly the raw JSON string array. Do not wrap it in markdown code blocks, backticks, or the text 'json'.`;
 
         const payload = {
+          prompt: `List real, actual hospitals explicitly located inside the district of ${selectedDistrict}, ${selectedState}.`,
           contents: [{
             parts: [{
               text: promptText
@@ -165,6 +167,7 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
             body: JSON.stringify(payload),
           }
         );
+
 
         if (!response.ok) {
           throw new Error(`Gemini HTTP error! status: ${response.status}`);
@@ -283,6 +286,7 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
                   <select
                     value={selectedDistrict}
                     onChange={(e) => {
+                      setHospitalsData([]); // Instantly flushes old Kolkata/Jamshedpur cards out of view
                       setSelectedDistrict(e.target.value);
                     }}
                     className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-sm font-medium outline-none focus:bg-white focus:border-[#0B5FA5] focus:ring-4 focus:ring-blue-500/5 transition-all cursor-pointer"
