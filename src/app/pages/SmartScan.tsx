@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "dummy_key");
 import { 
   Camera, 
   Search, 
@@ -222,9 +225,9 @@ export default function SmartScan() {
     }
 
     interface GeminiDrugInfo {
-      brand_detected: string;
-      chemical_salt: string;
-      estimated_market_mrp: number;
+      brand_name: string;
+      generic_name: string;
+      therapeutic_class: string;
     }
 
     let parsedDrugs: GeminiDrugInfo[] = [];
@@ -237,31 +240,22 @@ export default function SmartScan() {
 
     if (isRealKey) {
       try {
-        let payload: any = {};
+        let aiResponseText = "";
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         if (isImage) {
           // Extract mimeType from base64 string
           const mimeMatch = rawText.match(/^data:([^;]+);base64,/);
           const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
           
-          const promptPart = {
-            text: `You are an expert clinical vision system analyzing a handwritten doctor prescription. Look at the image directly.
-Identify all the prescribed pharmaceutical items (such as Duco Soap, Lyconeon, Hicon, Exoment, Lulimac, Tinea Go).
-Determine their core active Generic Chemical Salt and estimate their average private market retail price in Indian Rupees.
-Return strictly a raw JSON string array of objects with no markdown backticks, formatted exactly like this example:
-[
-  {"brand_detected": "Duco Soap", "chemical_salt": "Ketoconazole 1%", "estimated_market_mrp": 145.00},
-  {"brand_detected": "Lulimac Cream", "chemical_salt": "Luliconazole 1%", "estimated_market_mrp": 320.00}
-]`
-          };
+          const prompt = `Analyze this medical prescription image. Extract the prescribed medicines. 
+          Return strictly a raw, valid JSON array without any markdown formatting. Schema:
+          [{ "brand_name": "Name found on prescription", "generic_name": "The generic chemical salt", "therapeutic_class": "Purpose" }]`;
           
           const imagePart = fileToGenerativePart(rawText, mimeType);
           
-          payload = {
-            contents: [{
-              parts: [promptPart, imagePart]
-            }]
-          };
+          const result = await model.generateContent([prompt, imagePart]);
+          aiResponseText = result.response.text();
         } else {
           // Text-only pipeline for legacy support / OCR fallback compatibility
           const extractedTokens = rawText.split("\n").map(l => l.trim()).filter(l => l.length >= 3);
@@ -269,42 +263,19 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
             fallbackToken = extractedTokens[0];
           }
           
-          payload = {
-            contents: [{
-              parts: [{
-                text: `You are a clinical translation model. Analyze this text array extracted from a handwritten Indian prescription: "${JSON.stringify(extractedTokens)}".
-For every medicine you identify (such as Duco Soap, Lyconeon, Hicon, Exoment, Lulimac, Tinea Go), perform an internal clinical lookup to determine its core active Generic Chemical Salt and its average private market Retail MRP in Indian Rupees.
-Return strictly a raw JSON string array of objects with no markdown backticks, formatted exactly like this example:
-[
-  {"brand_detected": "Duco Soap", "chemical_salt": "Ketoconazole 1%", "estimated_market_mrp": 145.00},
-  {"brand_detected": "Lulimac Cream", "chemical_salt": "Luliconazole 1%", "estimated_market_mrp": 320.00}
-]`
-              }]
-            }]
-          };
+          const prompt = `You are a clinical translation model. Analyze this text array extracted from a handwritten Indian prescription: "${JSON.stringify(extractedTokens)}".
+          For every medicine you identify (such as Duco Soap, Lyconeon, Hicon, Exoment, Lulimac, Tinea Go), perform an internal clinical lookup to determine its brand_name, generic_name (Generic Chemical Salt), and therapeutic_class.
+          Return strictly a raw, valid JSON array without any markdown formatting. Schema:
+          [{ "brand_name": "Name found on prescription", "generic_name": "The generic chemical salt", "therapeutic_class": "Purpose" }]`;
+          
+          const result = await model.generateContent(prompt);
+          aiResponseText = result.response.text();
         }
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Gemini HTTP error! status: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        const aiResponseText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
         console.log("Raw Gemini AI response text:", aiResponseText);
 
         // 1. BULLETPROOF RAW STRING CLEANING:
-        const cleanText = aiResponseText.replace(/```json|```/g, "").trim();
+        const cleanText = aiResponseText.replace(/```json\n?|```/g, "").trim();
         
         // 2. EXPLICIT JSON PARSING FALLBACK:
         try {
@@ -319,15 +290,15 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           const blocks = cleanText.match(/\{[^{}]+\}/g);
           if (blocks) {
             for (const block of blocks) {
-              const brandMatch = block.match(/["']brand_detected["']\s*:\s*["']([^"']+)["']/i);
-              const saltMatch = block.match(/["']chemical_salt["']\s*:\s*["']([^"']+)["']/i);
-              const mrpMatch = block.match(/["']estimated_market_mrp["']\s*:\s*(\d+(?:\.\d+)?)/i);
+              const brandMatch = block.match(/["']brand_name["']\s*:\s*["']([^"']+)["']/i);
+              const saltMatch = block.match(/["']generic_name["']\s*:\s*["']([^"']+)["']/i);
+              const classMatch = block.match(/["']therapeutic_class["']\s*:\s*["']([^"']+)["']/i);
               
-              if (brandMatch || saltMatch || mrpMatch) {
+              if (brandMatch || saltMatch || classMatch) {
                 extractedList.push({
-                  brand_detected: brandMatch ? brandMatch[1] : "Prescribed Brand",
-                  chemical_salt: saltMatch ? saltMatch[1] : "Generic Salt",
-                  estimated_market_mrp: mrpMatch ? parseFloat(mrpMatch[1]) : 150
+                  brand_name: brandMatch ? brandMatch[1] : "Prescribed Brand",
+                  generic_name: saltMatch ? saltMatch[1] : "Generic Salt",
+                  therapeutic_class: classMatch ? classMatch[1] : "General"
                 });
               }
             }
@@ -340,7 +311,7 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
         
         console.log("AI parsed clean semantic drugs:", parsedDrugs);
       } catch (geminiError) {
-        console.warn("Gemini HTTP fetch failed, falling back to local OCR parser:", geminiError);
+        console.warn("Gemini SDK execution failed, falling back to local OCR parser:", geminiError);
       }
     } else {
       console.log("Gemini API Key is not configured or no tokens extracted. Falling back to local OCR parser.");
@@ -355,30 +326,33 @@ Return strictly a raw JSON string array of objects with no markdown backticks, f
           const { data, error } = await supabase
             .from("medicines")
             .select("brand_name, generic_name, brand_mrp_inr, govt_jan_aushadhi_mrp_inr")
-            .ilike("chemical_salt", `%${item.chemical_salt}%`);
+            .ilike("chemical_salt", `%${item.generic_name}%`);
 
           if (error) {
-            console.error(`Database query failed for chemical salt "${item.chemical_salt}":`, error);
+            console.error(`Database query failed for chemical salt "${item.generic_name}":`, error);
           }
 
           const dbRow = data && data.length > 0 ? data[0] : null;
 
           // 3. SELF-CONTAINED DATA INJECTION ENGINE:
+          const brandMrp = Number(dbRow?.brand_mrp_inr || 150);
+          const govtMrp = Number(dbRow?.govt_jan_aushadhi_mrp_inr || (brandMrp * 0.3));
+
           const combinedMedicine: Medicine = {
             id: dbRow?.id || String(Math.random()),
-            brand_name: item.brand_detected || "Prescribed Brand",
-            generic_name: dbRow?.generic_name || `Jan Aushadhi ${item.chemical_salt}`,
-            brand_mrp_inr: Number(item.estimated_market_mrp || 0),
-            govt_jan_aushadhi_mrp_inr: Number(dbRow?.govt_jan_aushadhi_mrp_inr || (Number(item.estimated_market_mrp || 0) * 0.3)),
+            brand_name: item.brand_name || "Prescribed Brand",
+            generic_name: dbRow?.generic_name || `Jan Aushadhi ${item.generic_name}`,
+            brand_mrp_inr: brandMrp,
+            govt_jan_aushadhi_mrp_inr: govtMrp,
             unit_pack_size: dbRow?.unit_pack_size || "10s",
-            therapeutic_class: dbRow?.therapeutic_class || "Dermatology",
+            therapeutic_class: item.therapeutic_class || dbRow?.therapeutic_class || "Dermatology",
             
             // Backward compatibility and robust UI variable bindings
-            brand_price: Number(item.estimated_market_mrp || 0),
-            generic_price: Number(dbRow?.govt_jan_aushadhi_mrp_inr || (Number(item.estimated_market_mrp || 0) * 0.3)),
+            brand_price: brandMrp,
+            generic_price: govtMrp,
             dosage: dbRow?.dosage || "Standard Strength",
-            description: dbRow?.description || `FDA bioequivalent PMBJP generic formulation matching ${item.chemical_salt}.`,
-            savings_percentage: Number((((Number(item.estimated_market_mrp || 0) - Number(dbRow?.govt_jan_aushadhi_mrp_inr || (Number(item.estimated_market_mrp || 0) * 0.3))) / Number(item.estimated_market_mrp || 1)) * 100).toFixed(2))
+            description: dbRow?.description || `FDA bioequivalent PMBJP generic formulation matching ${item.generic_name}.`,
+            savings_percentage: Number((((brandMrp - govtMrp) / brandMrp) * 100).toFixed(2))
           };
 
 

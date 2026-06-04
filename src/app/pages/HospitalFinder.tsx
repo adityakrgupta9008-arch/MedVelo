@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "dummy_key");
 import { 
   Building2, 
   ArrowLeft, 
@@ -105,13 +108,13 @@ const FALLBACK_HOSPITALS: Hospital[] = [
 
 export default function HospitalFinder() {
   const [hospitalsData, setHospitalsData] = useState<Hospital[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("West Bengal");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("Kolkata");
 
   useEffect(() => {
-    handleSearch();
+    fetchHospitals(selectedState, selectedDistrict);
   }, [selectedState, selectedDistrict]);
 
   const handleStateChange = (stateName: string) => {
@@ -125,69 +128,36 @@ export default function HospitalFinder() {
     }
   };
 
-  const handleSearch = async () => {
-    setHospitalsData([]); 
-    setIsLoading(true);
+  const fetchHospitals = async (selectedState: string, selectedDistrict: string) => {
+    setLoading(true);
+    setHospitalsData([]); // Flush old data
+
     const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
     const isRealKey = geminiKey && geminiKey !== "your_actual_copied_gemini_api_key";
 
-    // Strict clean prompt with backticks string interpolation matching the request
-    const cleanPrompt = `You are a strict Indian medical directory. Return a raw JSON array of real hospitals located completely within the district of ${selectedDistrict}, State: ${selectedState}. If the district is Giridih, return local centers like Sadar Hospital Giridih or Navjeevan. Do not include facilities from Kolkata or Jamshedpur.`;
-
-    const fullPrompt = `${cleanPrompt}
-For each hospital, include these exact JSON object fields:
-{
-  "hospital_name": "Name of the real hospital (e.g., SSKM Hospital, Apollo Multispecialty, RIMS, TMH)",
-  "location": "City, State",
-  "specialty": "Primary care specialty",
-  "emergency_status": "24/7 Available or Limited",
-  "contact_num": "Real or realistic local helpline number",
-  "available_doctors": [
-    {"name": "Dr. [Realistic Name]", "designation": "Senior Consultant", "department": "Cardiology/Dermatology", "availability": "10:00 AM - 2:00 PM"},
-    {"name": "Dr. [Realistic Name]", "designation": "MD", "department": "General Medicine", "availability": "4:00 PM - 8:00 PM"}
-  ]
-}
-Return strictly the raw JSON string array. Do not wrap it in markdown code blocks, backticks, or the text 'json'.`;
-
     if (isRealKey) {
       try {
-        const payload = {
-          prompt: cleanPrompt,
-          contents: [{
-            parts: [{
-              text: fullPrompt
-            }]
-          }]
-        };
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Gemini HTTP error! status: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        const aiResponseText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
-        const cleanText = aiResponseText.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(cleanText);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setHospitalsData(parsed);
-          toast.success(`Successfully loaded dynamic hospitals directory for ${selectedDistrict}, ${selectedState}!`, { icon: "🤖" });
-          setIsLoading(false);
-          return;
-        }
+        const prompt = `You are an expert Indian healthcare directory. List 5 prominent, real hospitals located explicitly in the district of ${selectedDistrict}, State: ${selectedState}. 
+        Do not include facilities from outside this district. 
+        Return strictly a raw, valid JSON array without any markdown formatting or backticks. Schema:
+        [{ "hospital_name": "Name", "location": "Address", "specialty": "Type", "emergency_status": "24/7", "contact_num": "Number" }]`;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        
+        // Clean up any potential markdown formatting the AI might add
+        const cleanJsonStr = responseText.replace(/```json\n?|```/g, '').trim();
+        const parsedData = JSON.parse(cleanJsonStr);
+        
+        setHospitalsData(parsedData);
+        toast.success(`Successfully loaded dynamic hospitals directory for ${selectedDistrict}, ${selectedState}!`, { icon: "🤖" });
+        setLoading(false);
+        return;
       } catch (error) {
-        console.warn("Gemini fetch failed, launching local fallback directory:", error);
+        console.error("AI Fetch Error:", error);
+        toast.error("Failed to load hospitals. Please check your API key quota.");
       }
     }
 
@@ -198,7 +168,7 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
              h.location.toLowerCase().includes(selectedState.toLowerCase())
       );
       setHospitalsData(filtered.length > 0 ? filtered : FALLBACK_HOSPITALS);
-      setIsLoading(false);
+      setLoading(false);
       toast.info(`Local fallback directory loaded for ${selectedDistrict}, ${selectedState}.`, { icon: "🛡️" });
     }, 800);
   };
@@ -323,7 +293,7 @@ Return strictly the raw JSON string array. Do not wrap it in markdown code block
           </Card>
 
           {/* Dynamic hospital-card output list */}
-          {isLoading ? (
+          {loading ? (
             /* Loading skeletons */
             <div className="space-y-4 animate-pulse">
               {[1, 2, 3].map((i) => (
