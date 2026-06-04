@@ -148,6 +148,146 @@ export const MOCK_MEDICINES: Medicine[] = [
     dosage: "20mg",
     description: "Proton pump inhibitor (PPI) that decreases the amount of acid produced in the stomach.",
     savings_percentage: 82.05,
+  },
+  {
+    id: "m11",
+    brand_name: "Betaloc 100mg",
+    generic_name: "Metoprolol Tartrate",
+    brand_price: 220.00,
+    generic_price: 44.00,
+    brand_mrp_inr: 220.00,
+    govt_jan_aushadhi_mrp_inr: 44.00,
+    unit_pack_size: "per 10 Tablets pack",
+    dosage: "100mg",
+    description: "Beta-blocker used to treat high blood pressure, chest pain (angina), and heart failure.",
+    savings_percentage: 80.00,
+    therapeutic_class: "Cardiology"
+  },
+  {
+    id: "m12",
+    brand_name: "Cimetidine",
+    generic_name: "Cimetidine",
+    brand_price: 110.00,
+    generic_price: 22.00,
+    brand_mrp_inr: 110.00,
+    govt_jan_aushadhi_mrp_inr: 22.00,
+    unit_pack_size: "per 10 Tablets pack",
+    dosage: "200mg",
+    description: "H2 blocker that reduces acid production in the stomach, treating ulcers and acid reflux.",
+    savings_percentage: 80.00,
+    therapeutic_class: "Gastroenterology"
+  },
+  {
+    id: "m13",
+    brand_name: "Dorzolamidum",
+    generic_name: "Dorzolamide",
+    brand_price: 350.00,
+    generic_price: 70.00,
+    brand_mrp_inr: 350.00,
+    govt_jan_aushadhi_mrp_inr: 70.00,
+    unit_pack_size: "per 5ml Eye Drops",
+    dosage: "2%",
+    description: "Carbonic anhydrase inhibitor used to treat high pressure inside the eye due to glaucoma.",
+    savings_percentage: 80.00,
+    therapeutic_class: "Ophthalmology"
+  },
+  {
+    id: "m14",
+    brand_name: "Oxprelol",
+    generic_name: "Oxprenolol",
+    brand_price: 180.00,
+    generic_price: 36.00,
+    brand_mrp_inr: 180.00,
+    govt_jan_aushadhi_mrp_inr: 36.00,
+    unit_pack_size: "per 10 Tablets pack",
+    dosage: "80mg",
+    description: "Non-selective beta-blocker used to treat angina pectoris, abnormal heart rhythms, and hypertension.",
+    savings_percentage: 80.00,
+    therapeutic_class: "Cardiology"
+  },
+  {
+    id: "m15",
+    brand_name: "Duco Soap",
+    generic_name: "Ketoconazole Soap",
+    brand_price: 195.00,
+    generic_price: 58.00,
+    brand_mrp_inr: 195.00,
+    govt_jan_aushadhi_mrp_inr: 58.00,
+    unit_pack_size: "per 75g Soap",
+    dosage: "2% w/w",
+    description: "Antifungal medicated soap used for the treatment of fungal infections of the skin.",
+    savings_percentage: 70.26,
+    therapeutic_class: "Dermatology"
+  },
+  {
+    id: "m16",
+    brand_name: "Lyconeon Syrup",
+    generic_name: "Lycopene Multi-vitamins Syrup",
+    brand_price: 160.00,
+    generic_price: 48.00,
+    brand_mrp_inr: 160.00,
+    govt_jan_aushadhi_mrp_inr: 48.00,
+    unit_pack_size: "per 200ml Bottle",
+    dosage: "Standard Strength",
+    description: "Antioxidant and multivitamin syrup to support general health and immune system function.",
+    savings_percentage: 70.00,
+    therapeutic_class: "Nutritional"
+  },
+  {
+    id: "m17",
+    brand_name: "Hicon 200",
+    generic_name: "Itraconazole 200mg",
+    brand_price: 240.00,
+    generic_price: 72.00,
+    brand_mrp_inr: 240.00,
+    govt_jan_aushadhi_mrp_inr: 72.00,
+    unit_pack_size: "per 10 Capsules pack",
+    dosage: "200mg",
+    description: "Broad-spectrum systemic antifungal medication used to treat fungal infections.",
+    savings_percentage: 70.00,
+    therapeutic_class: "Dermatology"
+  },
+  {
+    id: "m18",
+    brand_name: "Exoment C",
+    generic_name: "Clobetasol Propionate",
+    brand_price: 115.00,
+    generic_price: 34.00,
+    brand_mrp_inr: 115.00,
+    govt_jan_aushadhi_mrp_inr: 34.00,
+    unit_pack_size: "per 15g Tube",
+    dosage: "0.05% w/w",
+    description: "Super-potent topical corticosteroid used to reduce swelling, itching, and redness of skin.",
+    savings_percentage: 70.43,
+    therapeutic_class: "Dermatology"
+  },
+  {
+    id: "m19",
+    brand_name: "Lulimac Cream",
+    generic_name: "Luliconazole Cream",
+    brand_price: 290.00,
+    generic_price: 87.00,
+    brand_mrp_inr: 290.00,
+    govt_jan_aushadhi_mrp_inr: 87.00,
+    unit_pack_size: "per 30g Tube",
+    dosage: "1% w/w",
+    description: "Azole antifungal cream indicated for the topical treatment of athlete's foot and ringworm.",
+    savings_percentage: 70.00,
+    therapeutic_class: "Dermatology"
+  },
+  {
+    id: "m20",
+    brand_name: "Tinea Go-B",
+    generic_name: "Beclomethasone Dipropionate",
+    brand_price: 85.00,
+    generic_price: 25.00,
+    brand_mrp_inr: 85.00,
+    govt_jan_aushadhi_mrp_inr: 25.00,
+    unit_pack_size: "per 15g Tube",
+    dosage: "0.025% w/w",
+    description: "Topical steroid used to manage inflammatory skin conditions and reduce irritation.",
+    savings_percentage: 70.58,
+    therapeutic_class: "Dermatology"
   }
 ];
 
@@ -178,6 +318,15 @@ class MockQueryBuilder<T> {
     return this;
   }
 
+  in(column: string, values: any[]) {
+    this.data = this.data.filter((item: any) => {
+      const val = item[column];
+      if (!val) return false;
+      return values.some(v => String(v).trim().toLowerCase() === String(val).trim().toLowerCase());
+    });
+    return this;
+  }
+
   ilike(column: string, pattern: string) {
     // Converts "%advil%" -> "advil"
     const cleanedPattern = pattern.replace(/%/g, "").trim().toLowerCase();
@@ -187,6 +336,20 @@ class MockQueryBuilder<T> {
         return val.toLowerCase().includes(cleanedPattern);
       }
       return false;
+    });
+    return this;
+  }
+
+  order(column: string, { ascending = true } = {}) {
+    this.data = [...this.data].sort((a: any, b: any) => {
+      const valA = a[column];
+      const valB = b[column];
+      if (typeof valA === "number" && typeof valB === "number") {
+        return ascending ? valA - valB : valB - valA;
+      }
+      return ascending 
+        ? String(valA).localeCompare(String(valB)) 
+        : String(valB).localeCompare(String(valA));
     });
     return this;
   }

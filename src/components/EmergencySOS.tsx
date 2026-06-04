@@ -20,6 +20,12 @@ import { Button } from "../app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
 import { toast } from "sonner";
 
+// Import local assets for ambulances
+import blsImg from "../ambulances/bls.png";
+import alsImg from "../ambulances/als.png";
+import cardiacImg from "../ambulances/cardiac.png";
+import nicuImg from "../ambulances/nicu.png";
+
 export interface Ambulance {
   id: string;
   type: string;
@@ -30,13 +36,15 @@ export interface Ambulance {
   availability: boolean;
   eta_minutes: number;
   vehicle_plate: string;
+  image: string;
+  description: string;
   created_at?: string;
 }
 
 // Pre-seeded high-fidelity mock database for immediate offline sandbox testing
 const LOCAL_AMBULANCES: Ambulance[] = [
   {
-    id: "a1",
+    id: "MED-BLS01",
     type: "Basic Life Support (BLS)",
     driver_name: "Marcus Vance",
     driver_phone: "+1 (555) 911-0021",
@@ -45,9 +53,11 @@ const LOCAL_AMBULANCES: Ambulance[] = [
     availability: true,
     eta_minutes: 5,
     vehicle_plate: "MED-BLS01",
+    image: blsImg,
+    description: "Standard transport with oxygen, stretcher, basic first aid, and a trained EMT for stable patients."
   },
   {
-    id: "a2",
+    id: "MED-ALS02",
     type: "Advanced Life Support (ALS)",
     driver_name: "Sarah Sterling",
     driver_phone: "+1 (555) 911-0044",
@@ -56,9 +66,11 @@ const LOCAL_AMBULANCES: Ambulance[] = [
     availability: true,
     eta_minutes: 3,
     vehicle_plate: "MED-ALS02",
+    image: alsImg,
+    description: "Mobile ICU unit equipped with ventilators, ECG monitors, and advanced life-saving medications."
   },
   {
-    id: "a3",
+    id: "MED-CCU03",
     type: "Cardiac ICU Ambulance",
     driver_name: "Dr. David Chen",
     driver_phone: "+1 (555) 911-0099",
@@ -67,9 +79,11 @@ const LOCAL_AMBULANCES: Ambulance[] = [
     availability: true,
     eta_minutes: 4,
     vehicle_plate: "MED-CCU03",
+    image: cardiacImg,
+    description: "Specialized cardiac care unit featuring defibrillators, continuous heart monitoring, and trained cardiac staff."
   },
   {
-    id: "a4",
+    id: "MED-NICU04",
     type: "Neonatal/Pediatric ICU",
     driver_name: "Elena Rostova",
     driver_phone: "+1 (555) 911-0077",
@@ -78,6 +92,8 @@ const LOCAL_AMBULANCES: Ambulance[] = [
     availability: false,
     eta_minutes: 7,
     vehicle_plate: "MED-NICU04",
+    image: nicuImg,
+    description: "Climate-controlled incubator transport with pediatric ventilators and specialized neonatal care equipment."
   }
 ];
 
@@ -106,9 +122,30 @@ export default function EmergencySOS() {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setVehicles(data);
+          const mapped: Ambulance[] = data.map((v: any) => ({
+            id: v.id || v.vehicle_plate,
+            type: v.type,
+            driver_name: v.driver_name || v.driver || "Marcus Vance",
+            driver_phone: v.driver_phone || "+1 (555) 911-0021",
+            price: Number(v.price || 150),
+            rating: Number(v.rating || 4.9),
+            availability: v.availability !== undefined ? v.availability : !v.isOffline,
+            eta_minutes: Number(v.eta_minutes || (v.eta ? parseInt(v.eta) : 5)),
+            vehicle_plate: v.vehicle_plate || v.id,
+            image: v.image || (v.type.toLowerCase().includes("bls") ? blsImg : v.type.toLowerCase().includes("als") ? alsImg : v.type.toLowerCase().includes("cardiac") ? cardiacImg : nicuImg),
+            description: v.description || (
+              v.type.toLowerCase().includes("bls") 
+                ? "Standard transport with oxygen, stretcher, basic first aid, and a trained EMT for stable patients."
+                : v.type.toLowerCase().includes("als")
+                  ? "Mobile ICU unit equipped with ventilators, ECG monitors, and advanced life-saving medications."
+                  : v.type.toLowerCase().includes("cardiac")
+                    ? "Specialized cardiac care unit featuring defibrillators, continuous heart monitoring, and trained cardiac staff."
+                    : "Climate-controlled incubator transport with pediatric ventilators and specialized neonatal care equipment."
+            )
+          }));
+          setVehicles(mapped);
           // Auto select first available vehicle
-          const firstAvail = data.find((v: Ambulance) => v.availability);
+          const firstAvail = mapped.find((v: Ambulance) => v.availability);
           if (firstAvail) setSelectedVehicle(firstAvail);
         } else {
           // Table returned empty list, fall back to sandbox
@@ -248,91 +285,83 @@ export default function EmergencySOS() {
               </div>
 
               {/* Tiers Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {vehicles.map((v) => {
-                  const isSelected = selectedVehicle?.id === v.id;
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {vehicles.map((amb) => {
+                  const isSelected = selectedVehicle?.id === amb.id;
                   
                   return (
-                    <Card
-                      key={v.id}
-                      onClick={() => v.availability && setSelectedVehicle(v)}
-                      className={`group cursor-pointer border overflow-hidden transition-all duration-300 ${
-                        !v.availability 
-                          ? "opacity-60 bg-slate-100/50 cursor-not-allowed border-slate-100" 
+                    <div 
+                      key={amb.id} 
+                      onClick={() => !amb.isOffline && setSelectedVehicle(amb)}
+                      className={`rounded-xl shadow-md overflow-hidden bg-white border cursor-pointer transition-all duration-300 flex flex-col h-full ${
+                        amb.isOffline 
+                          ? 'opacity-60 grayscale bg-slate-100/50 cursor-not-allowed border-slate-200' 
                           : isSelected 
-                            ? "border-red-500 ring-4 ring-red-500/10 shadow-lg bg-gradient-to-b from-white to-red-50/5" 
-                            : "border-slate-150 shadow-md hover:shadow-xl hover:border-red-500/30 bg-white"
+                            ? 'border-red-500 ring-4 ring-red-500/10 shadow-lg bg-gradient-to-b from-white to-red-50/5' 
+                            : 'border-gray-100 hover:shadow-lg hover:border-red-500/30 transition-shadow'
                       }`}
                     >
-                      {/* Vehicle photo placeholder / Stylized Ambulance Vector */}
-                      <div className="relative aspect-[16/9] w-full bg-slate-900 flex items-center justify-center overflow-hidden border-b border-slate-100">
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-650 to-rose-750 opacity-90"></div>
-                        
-                        {/* Custom vehicle illustration vector */}
-                        <div className="relative z-10 text-center flex flex-col items-center">
-                          <div className={`p-4 rounded-full bg-white/10 text-white mb-2 transition-transform duration-300 group-hover:scale-110 ${isSelected ? "animate-bounce" : ""}`}>
-                            <AmbulanceIcon className="h-8 w-8" />
+                      {/* 1. NEW IMAGE HEADER */}
+                      <div className="relative h-40 w-full bg-gray-150 flex items-center justify-center overflow-hidden">
+                        {/* Fallback Vector background shown if image is missing/fails */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-650 to-rose-750 opacity-90 flex items-center justify-center">
+                          <div className="text-center flex flex-col items-center">
+                            <div className={`p-4 rounded-full bg-white/10 text-white mb-2 ${isSelected ? "animate-bounce" : ""}`}>
+                              <AmbulanceIcon className="h-8 w-8" />
+                            </div>
                           </div>
-                          <span className="text-[10px] tracking-widest font-black uppercase text-white/80">
-                            {v.vehicle_plate}
-                          </span>
                         </div>
 
-                        {/* Status beacon overlay */}
-                        <div className="absolute top-3 right-3 z-20">
-                          {v.availability ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                              Ready
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-slate-800/80 text-slate-400 border border-slate-700 backdrop-blur-sm">
-                              <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                              Offline
-                            </span>
-                          )}
+                        {amb.image ? (
+                          <img 
+                            src={amb.image} 
+                            alt={amb.type} 
+                            className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 hover:scale-105"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        
+                        {/* ETA Badge Overlay */}
+                        <div className="absolute top-3 left-3 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1 z-20">
+                          <span>⏱️</span> {amb.eta} ETA
                         </div>
 
-                        {/* ETA overlay */}
-                        <div className="absolute bottom-3 left-3 z-20">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-black/60 text-xs font-bold text-white backdrop-blur-sm">
-                            <Clock className="h-3 w-3 text-red-400" />
-                            {v.eta_minutes} Min ETA
-                          </span>
-                        </div>
+                        {/* Offline Badge Overlay */}
+                        {amb.isOffline && (
+                          <div className="absolute top-3 right-3 bg-gray-500/90 text-white text-xs font-bold px-2 py-1 rounded z-20">
+                            ● Offline
+                          </div>
+                        )}
                       </div>
 
-                      <CardHeader className="p-4 pb-2">
-                        <CardTitle className="text-sm font-black text-slate-800 flex items-center justify-between">
-                          {v.type}
-                          <span className="text-red-600 font-extrabold text-base">
-                            ${v.price.toFixed(0)}
-                          </span>
-                        </CardTitle>
-                        <CardDescription className="text-xs text-slate-500">
-                          Equipped medical transport
-                        </CardDescription>
-                      </CardHeader>
-
-                      <CardContent className="p-4 pt-2 border-t border-slate-50 flex items-center justify-between">
-                        {/* Driver Profile */}
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                            <Users className="h-4 w-4 text-slate-500" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-700">{v.driver_name}</span>
-                            <span className="text-[10px] text-slate-400">Driver & Tech</span>
-                          </div>
+                      {/* 2. CARD DETAILS */}
+                      <div className="p-5 flex flex-col h-[calc(100%-10rem)] flex-grow">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                            {amb.type}
+                          </h3>
                         </div>
                         
-                        {/* Driver rating stars */}
-                        <div className="flex items-center gap-0.5 bg-slate-50 px-2 py-1 rounded border border-slate-100 text-xs text-amber-500 font-bold shrink-0">
-                          <Star className="h-3.5 w-3.5 fill-amber-400" />
-                          {v.rating.toFixed(2)}
+                        {/* Descriptive Text */}
+                        <p className="text-sm text-gray-500 mb-4 flex-grow">{amb.description}</p>
+
+                        {/* 3. DRIVER INFO (Rating Removed) */}
+                        <div className="flex items-center border-t border-gray-100 pt-4 mt-auto">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400">
+                              {/* Default Avatar Icon */}
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">{amb.driver}</p>
+                              <p className="text-xs text-gray-500">Assigned Driver & Tech</p>
+                            </div>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>

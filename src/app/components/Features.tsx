@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
-import { Ambulance, Pill, Stethoscope, FileText, Bot } from "lucide-react";
+import { Ambulance, Pill, Stethoscope, FileText, Bot, Hospital } from "lucide-react";
 
 const features = [
   {
@@ -33,6 +33,12 @@ const features = [
     title: "AI Healthcare Assistant",
     description: "Smart symptom checker and 24/7 AI support for general medical queries.",
     path: "/assistant"
+  },
+  {
+    icon: <Hospital className="w-8 h-8 text-emerald-500" />,
+    title: "Hospitals & Doctor Slots",
+    description: "Locate nearby medical centers, inspect real-time available beds, and book doctor appointments.",
+    path: "/hospitals"
   }
 ];
 

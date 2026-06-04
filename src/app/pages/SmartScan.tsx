@@ -66,6 +66,20 @@ export default function SmartScan() {
 
     setIsLoading(true);
 
+    // Helper to run AI vision scan fallback if database query yields no preset records
+    const runAiScanFallback = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        handleScanSuccess(dataUrl);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file.");
+        setIsLoading(false);
+      };
+      reader.readAsDataURL(file);
+    };
+
     // 1. EXPLICIT FILE-NAME ROUTING:
     if (file.name === "1000_F_56617167_ZGbrr3mHPUmLoksQmpuY7SPA8ihTI5Dh.jpg") {
       try {
@@ -97,15 +111,14 @@ export default function SmartScan() {
           setMatchedMedicine(mappedRows[0]);
           setView("result");
           toast.success(`Matched ${mappedRows.length} cardiovascular medicines!`, { icon: "❤️" });
+          setIsLoading(false);
         } else {
-          toast.error("Medicines not found in database.");
+          console.warn("Cardiovascular medicines not found in database. Linking with API AI...");
+          runAiScanFallback();
         }
       } catch (err) {
-        console.error("Database query failed:", err);
-        toast.error("Failed to fetch medicines from database.");
-      } finally {
-        // 3. UI CLEANUP MANAGEMENT:
-        setIsLoading(false);
+        console.warn("Cardiovascular database query failed. Linking with API AI...", err);
+        runAiScanFallback();
       }
       return;
     }
@@ -141,15 +154,14 @@ export default function SmartScan() {
 
           setView("result");
           toast.success(`Matched ${mappedRows.length} dermatological medicines!`, { icon: "🧴" });
+          setIsLoading(false);
         } else {
-          toast.error("Medicines not found in database.");
+          console.warn("Dermatological medicines not found in database. Linking with API AI...");
+          runAiScanFallback();
         }
       } catch (err) {
-        console.error("Database query failed:", err);
-        toast.error("Failed to fetch medicines from database.");
-      } finally {
-        // 3. UI CLEANUP MANAGEMENT:
-        setIsLoading(false);
+        console.warn("Dermatological database query failed. Linking with API AI...", err);
+        runAiScanFallback();
       }
       return;
     }
@@ -161,16 +173,7 @@ export default function SmartScan() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      handleScanSuccess(dataUrl);
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read image file.");
-      setIsLoading(false);
-    };
-    reader.readAsDataURL(file);
+    runAiScanFallback();
   };
 
   // Suggestions search on query update
@@ -228,6 +231,11 @@ export default function SmartScan() {
       brand_name: string;
       generic_name: string;
       therapeutic_class: string;
+      brand_mrp_inr?: number;
+      govt_jan_aushadhi_mrp_inr?: number;
+      unit_pack_size?: string;
+      dosage?: string;
+      description?: string;
     }
 
     let parsedDrugs: GeminiDrugInfo[] = [];
@@ -241,7 +249,10 @@ export default function SmartScan() {
     if (isRealKey) {
       try {
         let aiResponseText = "";
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash",
+          generationConfig: { responseMimeType: "application/json" }
+        });
 
         if (isImage) {
           // Extract mimeType from base64 string
@@ -249,8 +260,9 @@ export default function SmartScan() {
           const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
           
           const prompt = `Analyze this medical prescription image. Extract the prescribed medicines. 
-          Return strictly a raw, valid JSON array without any markdown formatting. Schema:
-          [{ "brand_name": "Name found on prescription", "generic_name": "The generic chemical salt", "therapeutic_class": "Purpose" }]`;
+          For each medicine, determine the brand name, the generic chemical salt, typical brand MRP in Indian Rupees (INR), typical government Jan Aushadhi generic MRP in INR (usually 50-90% cheaper), typical unit pack size (e.g. "per 10 Tablets pack"), therapeutic class, typical dosage, and a brief description.
+          You must return a JSON array of objects. 
+          Schema: [{ "brand_name": "...", "generic_name": "...", "brand_mrp_inr": 120.00, "govt_jan_aushadhi_mrp_inr": 24.00, "unit_pack_size": "per 10 Tablets pack", "therapeutic_class": "...", "dosage": "...", "description": "..." }]`;
           
           const imagePart = fileToGenerativePart(rawText, mimeType);
           
@@ -264,9 +276,9 @@ export default function SmartScan() {
           }
           
           const prompt = `You are a clinical translation model. Analyze this text array extracted from a handwritten Indian prescription: "${JSON.stringify(extractedTokens)}".
-          For every medicine you identify (such as Duco Soap, Lyconeon, Hicon, Exoment, Lulimac, Tinea Go), perform an internal clinical lookup to determine its brand_name, generic_name (Generic Chemical Salt), and therapeutic_class.
-          Return strictly a raw, valid JSON array without any markdown formatting. Schema:
-          [{ "brand_name": "Name found on prescription", "generic_name": "The generic chemical salt", "therapeutic_class": "Purpose" }]`;
+          For every medicine you identify (such as Duco Soap, Lyconeon, Hicon, Exoment, Lulimac, Tinea Go), perform an internal clinical lookup to determine its brand_name, generic_name (Generic Chemical Salt), typical brand MRP in INR, typical government Jan Aushadhi generic MRP in INR (usually 50-90% cheaper), unit_pack_size (e.g. "per 10 Tablets pack"), therapeutic_class, dosage, and description.
+          You must return a JSON array of objects.
+          Schema: [{ "brand_name": "...", "generic_name": "...", "brand_mrp_inr": 120.00, "govt_jan_aushadhi_mrp_inr": 24.00, "unit_pack_size": "per 10 Tablets pack", "therapeutic_class": "...", "dosage": "...", "description": "..." }]`;
           
           const result = await model.generateContent(prompt);
           aiResponseText = result.response.text();
@@ -293,12 +305,22 @@ export default function SmartScan() {
               const brandMatch = block.match(/["']brand_name["']\s*:\s*["']([^"']+)["']/i);
               const saltMatch = block.match(/["']generic_name["']\s*:\s*["']([^"']+)["']/i);
               const classMatch = block.match(/["']therapeutic_class["']\s*:\s*["']([^"']+)["']/i);
+              const brandMrpMatch = block.match(/["']brand_mrp_inr["']\s*:\s*(\d+(\.\d+)?)/i);
+              const govtMrpMatch = block.match(/["']govt_jan_aushadhi_mrp_inr["']\s*:\s*(\d+(\.\d+)?)/i);
+              const packMatch = block.match(/["']unit_pack_size["']\s*:\s*["']([^"']+)["']/i);
+              const dosageMatch = block.match(/["']dosage["']\s*:\s*["']([^"']+)["']/i);
+              const descMatch = block.match(/["']description["']\s*:\s*["']([^"']+)["']/i);
               
               if (brandMatch || saltMatch || classMatch) {
                 extractedList.push({
                   brand_name: brandMatch ? brandMatch[1] : "Prescribed Brand",
                   generic_name: saltMatch ? saltMatch[1] : "Generic Salt",
-                  therapeutic_class: classMatch ? classMatch[1] : "General"
+                  therapeutic_class: classMatch ? classMatch[1] : "General",
+                  brand_mrp_inr: brandMrpMatch ? Number(brandMrpMatch[1]) : undefined,
+                  govt_jan_aushadhi_mrp_inr: govtMrpMatch ? Number(govtMrpMatch[1]) : undefined,
+                  unit_pack_size: packMatch ? packMatch[1] : undefined,
+                  dosage: dosageMatch ? dosageMatch[1] : undefined,
+                  description: descMatch ? descMatch[1] : undefined
                 });
               }
             }
@@ -335,26 +357,25 @@ export default function SmartScan() {
           const dbRow = data && data.length > 0 ? data[0] : null;
 
           // 3. SELF-CONTAINED DATA INJECTION ENGINE:
-          const brandMrp = Number(dbRow?.brand_mrp_inr || 150);
-          const govtMrp = Number(dbRow?.govt_jan_aushadhi_mrp_inr || (brandMrp * 0.3));
+          const brandMrp = dbRow ? Number(dbRow.brand_mrp_inr) : Number(item.brand_mrp_inr || 150);
+          const govtMrp = dbRow ? Number(dbRow.govt_jan_aushadhi_mrp_inr) : Number(item.govt_jan_aushadhi_mrp_inr || (brandMrp * 0.3));
 
           const combinedMedicine: Medicine = {
             id: dbRow?.id || String(Math.random()),
-            brand_name: item.brand_name || "Prescribed Brand",
-            generic_name: dbRow?.generic_name || `Jan Aushadhi ${item.generic_name}`,
+            brand_name: dbRow?.brand_name || item.brand_name || "Prescribed Brand",
+            generic_name: dbRow?.generic_name || item.generic_name || `Jan Aushadhi ${item.generic_name}`,
             brand_mrp_inr: brandMrp,
             govt_jan_aushadhi_mrp_inr: govtMrp,
-            unit_pack_size: dbRow?.unit_pack_size || "10s",
+            unit_pack_size: dbRow?.unit_pack_size || item.unit_pack_size || "10s",
             therapeutic_class: item.therapeutic_class || dbRow?.therapeutic_class || "Dermatology",
             
             // Backward compatibility and robust UI variable bindings
             brand_price: brandMrp,
             generic_price: govtMrp,
-            dosage: dbRow?.dosage || "Standard Strength",
-            description: dbRow?.description || `FDA bioequivalent PMBJP generic formulation matching ${item.generic_name}.`,
+            dosage: dbRow?.dosage || item.dosage || "Standard Strength",
+            description: dbRow?.description || item.description || `FDA bioequivalent PMBJP generic formulation matching ${item.generic_name}.`,
             savings_percentage: Number((((brandMrp - govtMrp) / brandMrp) * 100).toFixed(2))
           };
-
 
           if (!medicinesList.some(m => m.id === combinedMedicine.id)) {
             medicinesList.push(combinedMedicine);
@@ -399,20 +420,29 @@ export default function SmartScan() {
 
             const dbRow = data && data.length > 0 ? data[0] : null;
 
+            // Check if we can find it in MOCK_MEDICINES locally
+            const mockMatch = MOCK_MEDICINES.find(m => 
+              m.brand_name.toLowerCase().includes(drugName.toLowerCase()) || 
+              m.generic_name.toLowerCase().includes(drugName.toLowerCase())
+            );
+
+            const brandMrp = dbRow ? Number(dbRow.brand_mrp_inr) : (mockMatch?.brand_mrp_inr || 150);
+            const govtMrp = dbRow ? Number(dbRow.govt_jan_aushadhi_mrp_inr) : (mockMatch?.govt_jan_aushadhi_mrp_inr || (brandMrp * 0.3));
+
             const combinedMedicine: Medicine = {
-              id: dbRow?.id || String(Math.random()),
-              brand_name: dbRow?.brand_name || drugName,
-              generic_name: dbRow?.generic_name || `${drugName} Generic Equiv`,
-              brand_mrp_inr: Number(dbRow?.brand_mrp_inr || 0),
-              govt_jan_aushadhi_mrp_inr: Number(dbRow?.govt_jan_aushadhi_mrp_inr || 0),
-              unit_pack_size: dbRow?.unit_pack_size || "per 10 Tablets pack",
-              therapeutic_class: dbRow?.therapeutic_class || "Dermatology",
+              id: dbRow?.id || mockMatch?.id || String(Math.random()),
+              brand_name: dbRow?.brand_name || mockMatch?.brand_name || drugName,
+              generic_name: dbRow?.generic_name || mockMatch?.generic_name || `${drugName} Generic Equiv`,
+              brand_mrp_inr: brandMrp,
+              govt_jan_aushadhi_mrp_inr: govtMrp,
+              unit_pack_size: dbRow?.unit_pack_size || mockMatch?.unit_pack_size || "per 10 Tablets pack",
+              therapeutic_class: dbRow?.therapeutic_class || mockMatch?.therapeutic_class || "Dermatology",
               
-              brand_price: Number(dbRow?.brand_price || 0),
-              generic_price: Number(dbRow?.generic_price || 0),
-              dosage: dbRow?.dosage || "Standard Strength",
-              description: dbRow?.description || `FDA bioequivalent formulation for ${drugName}. Extracted via AI Smart Scan. Note: This item is dynamically mapped from your doctor's PMBJP generic alternative prescription.`,
-              savings_percentage: Number(dbRow?.savings_percentage || 0)
+              brand_price: brandMrp,
+              generic_price: govtMrp,
+              dosage: dbRow?.dosage || mockMatch?.dosage || "Standard Strength",
+              description: dbRow?.description || mockMatch?.description || `FDA bioequivalent formulation for ${drugName}. Extracted via AI Smart Scan. Note: This item is dynamically mapped from your doctor's PMBJP generic alternative prescription.`,
+              savings_percentage: Number((((brandMrp - govtMrp) / brandMrp) * 100).toFixed(2))
             };
 
             if (!medicinesList.some(m => m.id === combinedMedicine.id)) {
@@ -696,8 +726,59 @@ export default function SmartScan() {
 
                 {/* No suggestions helper */}
                 {showSuggestions && searchQuery.trim().length > 0 && suggestions.length === 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-40 bg-white rounded-2xl border border-slate-100 shadow-xl p-4 text-center text-slate-500 text-xs">
-                    No matching medicines found in database. Try typing "Advil", "Lipitor", or "Zoloft".
+                  <div className="absolute top-full left-0 right-0 mt-2 z-40 bg-white rounded-2xl border border-slate-100 shadow-xl p-4 text-center text-slate-500 text-xs flex flex-col gap-2 items-center">
+                    <span>No matching medicines found in database.</span>
+                    <button
+                      onClick={async () => {
+                        setIsLoading(true);
+                        setShowSuggestions(false);
+                        try {
+                          const model = genAI.getGenerativeModel({ 
+                            model: "gemini-1.5-flash",
+                            generationConfig: { responseMimeType: "application/json" }
+                          });
+                          const prompt = `Perform a clinical lookup for the medicine "${searchQuery}". 
+                          Determine its brand_name, generic_name (Generic Chemical Salt), typical brand MRP in INR, typical government Jan Aushadhi generic MRP in INR (usually 50-90% cheaper), typical unit pack size, therapeutic class, typical dosage, and description.
+                          You must return a single JSON object.
+                          Schema: { "brand_name": "...", "generic_name": "...", "brand_mrp_inr": 120.00, "govt_jan_aushadhi_mrp_inr": 24.00, "unit_pack_size": "per 10 Tablets pack", "therapeutic_class": "...", "dosage": "...", "description": "..." }`;
+                          const result = await model.generateContent(prompt);
+                          const aiResponseText = result.response.text();
+                          const cleanText = aiResponseText.replace(/```json\n?|```/g, "").trim();
+                          const parsed = JSON.parse(cleanText);
+                          
+                          const brandMrp = Number(parsed.brand_mrp_inr || 150);
+                          const govtMrp = Number(parsed.govt_jan_aushadhi_mrp_inr || (brandMrp * 0.3));
+                          
+                          const med: Medicine = {
+                            id: String(Math.random()),
+                            brand_name: parsed.brand_name || searchQuery,
+                            generic_name: parsed.generic_name || `${searchQuery} Generic`,
+                            brand_mrp_inr: brandMrp,
+                            govt_jan_aushadhi_mrp_inr: govtMrp,
+                            unit_pack_size: parsed.unit_pack_size || "10s",
+                            therapeutic_class: parsed.therapeutic_class || "General",
+                            brand_price: brandMrp,
+                            generic_price: govtMrp,
+                            dosage: parsed.dosage || "Standard Strength",
+                            description: parsed.description || `FDA bioequivalent PMBJP generic formulation matching ${parsed.generic_name}.`,
+                            savings_percentage: Number((((brandMrp - govtMrp) / brandMrp) * 100).toFixed(2))
+                          };
+                          
+                          setScannedMedicines([med]);
+                          setMatchedMedicine(med);
+                          setView("result");
+                          toast.success(`Gemini AI retrieved details for "${med.brand_name}"!`, { icon: "🤖" });
+                        } catch (err) {
+                          console.error("AI manual lookup failed:", err);
+                          toast.error("Failed to fetch medicine details from AI.");
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      className="w-full bg-[#0B5FA5] text-white py-2 rounded-xl text-xs font-bold hover:bg-[#094e85] transition-colors mt-2 cursor-pointer"
+                    >
+                      Retrieve Details via Gemini AI
+                    </button>
                   </div>
                 )}
               </div>

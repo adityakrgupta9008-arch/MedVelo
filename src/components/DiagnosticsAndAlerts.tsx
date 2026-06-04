@@ -191,6 +191,33 @@ export default function DiagnosticsAndAlerts() {
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
   const [isAlertActive, setIsAlertActive] = useState<boolean>(false);
 
+  const STATE_DISTRICT_MAP: Record<string, string[]> = {
+    "West Bengal": ["Kolkata", "North 24 Parganas", "Howrah"],
+    "Jharkhand": ["Ranchi", "Giridih", "East Singhbhum", "Dhanbad"],
+    "Maharashtra": ["Mumbai", "Pune", "Nagpur"],
+    "Delhi": ["New Delhi", "North Delhi", "South Delhi"],
+    "Karnataka": ["Bengaluru", "Mysuru", "Hubli"]
+  };
+
+  const [stateFilter, setStateFilter] = useState<string>("West Bengal");
+  const [districtFilter, setDistrictFilter] = useState<string>("Kolkata");
+
+  const handleStateChange = (stateName: string) => {
+    setStateFilter(stateName);
+    const districts = STATE_DISTRICT_MAP[stateName] || [];
+    if (districts.length > 0) {
+      setDistrictFilter(districts[0]);
+    } else {
+      setDistrictFilter("");
+    }
+  };
+
+  useEffect(() => {
+    if (stateFilter && districtFilter) {
+      toast.success(`Showing nearest lab partners in ${districtFilter}, ${stateFilter}`, { icon: "📍" });
+    }
+  }, [districtFilter, stateFilter]);
+
   // AI Scanner camera states
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -454,6 +481,48 @@ export default function DiagnosticsAndAlerts() {
             </span>
           </div>
 
+          {/* State and District Dropdown Selection Row */}
+          <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-150 flex flex-col gap-3">
+            <span className="text-[11px] font-black text-[#0B5FA5] uppercase tracking-wider flex items-center gap-1">
+              <span>📍</span> Find our nearest available partners at your location
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* State Filter select */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  Select State
+                </label>
+                <select
+                  value={stateFilter}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold outline-none focus:border-[#0B5FA5] transition-all cursor-pointer font-bold"
+                >
+                  <option value="West Bengal">West Bengal</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Karnataka">Karnataka</option>
+                </select>
+              </div>
+
+              {/* District Filter select */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  Select District
+                </label>
+                <select
+                  value={districtFilter}
+                  onChange={(e) => setDistrictFilter(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold outline-none focus:border-[#0B5FA5] transition-all cursor-pointer font-bold"
+                >
+                  {(STATE_DISTRICT_MAP[stateFilter] || []).map((dst) => (
+                    <option key={dst} value={dst}>{dst}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           {isLoadingData ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (
@@ -489,24 +558,9 @@ export default function DiagnosticsAndAlerts() {
                     </CardHeader>
 
                     <CardContent className="p-5 pt-0 border-t border-slate-50 mt-auto">
-                      <div className="flex items-baseline justify-between py-3">
-                        <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                          Booking Price
-                        </span>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-xs text-slate-400 line-through">
-                            ${test.original_price.toFixed(0)}
-                          </span>
-                          <span className="text-lg font-black text-emerald-600 flex items-baseline">
-                            <span className="text-xs font-bold mr-0.5">$</span>
-                            {test.price.toFixed(0)}
-                          </span>
-                        </div>
-                      </div>
-
                       <Button
                         onClick={() => window.open(test.partner_payment_url, "_blank")}
-                        className="w-full py-4.5 bg-slate-50 hover:bg-[#0B5FA5] text-slate-700 hover:text-white border border-slate-200 hover:border-[#0B5FA5] text-xs font-bold rounded-xl flex items-center justify-center gap-1 group/btn shadow-none transition-all duration-300"
+                        className="w-full mt-4 py-4.5 bg-slate-50 hover:bg-[#0B5FA5] text-slate-700 hover:text-white border border-slate-200 hover:border-[#0B5FA5] text-xs font-bold rounded-xl flex items-center justify-center gap-1 group/btn shadow-none transition-all duration-300"
                       >
                         Book via Partner
                         <ExternalLink className="h-3.5 w-3.5 opacity-60 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />

@@ -14,17 +14,15 @@ import { toast } from "sonner";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 
-interface Comparison {
-  provider_name: string;
-  price_inr: number;
-  booking_url: string;
-}
-
 interface DiagnosticTest {
-  test_name: string;
-  category: string;
+  id: number;
+  provider: string;
+  discountBadge: string;
+  title: string;
   description: string;
-  comparisons: Comparison[];
+  testsIncluded: string[];
+  sampleType: string;
+  category: string;
 }
 
 const STATE_DISTRICT_MAP: Record<string, string[]> = {
@@ -35,43 +33,36 @@ const STATE_DISTRICT_MAP: Record<string, string[]> = {
   "Karnataka": ["Bengaluru", "Mysuru", "Hubli"]
 };
 
-const parsePriceToNumber = (val: any) => {
-  if (typeof val === 'number') return val;
-  if (!val && val !== 0) return 0;
-  const cleaned = String(val).replace(/[^0-9.]/g, '');
-  const parsed = parseFloat(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 const FALLBACK_TESTS: DiagnosticTest[] = [
   {
-    test_name: "Complete Blood Count (CBC)",
-    category: "Blood Test",
-    description: "Evaluates overall health and detects a wide range of disorders including anemia and infection.",
-    comparisons: [
-      { provider_name: "Tata 1mg", price_inr: 299, booking_url: "https://www.1mg.com/labs/home" },
-      { provider_name: "Dr Lal PathLabs", price_inr: 350, booking_url: "https://www.lalpathlabs.com" },
-      { provider_name: "Redcliffe Labs", price_inr: 299, booking_url: "https://redcliffelabs.com" }
-    ]
+    id: 1,
+    provider: "THYROCARE",
+    discountBadge: "SAVE 59%",
+    title: "Executive Full Body Health Checkup",
+    description: "Complete screening of liver, kidney, thyroid, heart, and hemogram with 82 vital bio-parameters.",
+    testsIncluded: ["Lipid Profile", "Liver Function (LFT)", "Thyroid (T3/T4/TSH)", "Kidney (KFT)"],
+    sampleType: "Blood & Urine",
+    category: "Health Package"
   },
   {
-    test_name: "Executive Full Body Checkup",
-    category: "Health Package",
-    description: "Comprehensive screening of liver, kidney, thyroid, heart, and metabolic parameters.",
-    comparisons: [
-      { provider_name: "Thyrocare", price_inr: 999, booking_url: "https://www.thyrocare.com" },
-      { provider_name: "Tata 1mg", price_inr: 1299, booking_url: "https://www.1mg.com/labs/home" },
-      { provider_name: "Redcliffe Labs", price_inr: 997, booking_url: "https://redcliffelabs.com" }
-    ]
+    id: 2,
+    provider: "DR LAL PATHLABS",
+    discountBadge: "SAVE 55%",
+    title: "Complete Hemogram & Diabetes Screen",
+    description: "Vital screen checking HbA1c, fasting blood glucose, and complete blood count (CBC) profiles.",
+    testsIncluded: ["HbA1c", "Fasting Glucose", "Complete Blood Count (CBC)"],
+    sampleType: "Blood",
+    category: "Diabetes"
   },
   {
-    test_name: "Diabetes Care Profile (HbA1c)",
-    category: "Diabetes",
-    description: "Monitors 3-month average blood glucose levels to track metabolic and diabetic markers.",
-    comparisons: [
-      { provider_name: "Apollo Diagnostics", price_inr: 399, booking_url: "https://www.apollodiagnostics.in" },
-      { provider_name: "Tata 1mg", price_inr: 320, booking_url: "https://www.1mg.com/labs/home" }
-    ]
+    id: 3,
+    provider: "APOLLO DIAGNOSTICS",
+    discountBadge: "SAVE 40%",
+    title: "Advanced Thyroid Care Package",
+    description: "Comprehensive evaluation of thyroid gland activity, tracking triiodothyronine, thyroxine, and thyroid stimulating hormone levels.",
+    testsIncluded: ["Thyroid (T3/T4/TSH)", "Thyroid Antibodies", "Thyroid Profile Free"],
+    sampleType: "Blood",
+    category: "Thyroid"
   }
 ];
 
@@ -105,39 +96,42 @@ export default function DiagnosticsHub() {
 
     if (isRealKey) {
       try {
-        const promptText = `You are an Indian medical diagnostic aggregator. The user is looking for home sample collection tests in State: "${stateVal}" and District: "${districtVal}".
-Generate a realistic, accurate JSON array of 3 critical diagnostic tests/packages frequently requested here (e.g., Complete Blood Count, HbA1c, or Full Body Health Checkup).
-For each test, fetch competitive live market prices in Indian Rupees (₹) from real home collection websites active in India. Structure the JSON response exactly like this template:
+        const promptText = `You are an Indian medical diagnostic aggregator. The user is looking for home sample collection packages in State: "${stateVal}" and District: "${districtVal}".
+Generate a realistic, accurate JSON array of 3 critical diagnostic packages/checkups frequently requested here (e.g., Executive Full Body Health Checkup, Complete Hemogram & Diabetes Screen, or Advanced Cardiac Care Panel).
+Structure the JSON response exactly like this template:
 [
   {
-    "test_name": "Complete Blood Count (CBC)",
-    "category": "Blood Test",
-    "description": "Evaluates overall health and detects a wide range of disorders including anemia and infection.",
-    "comparisons": [
-      {"provider_name": "Tata 1mg", "price_inr": 299, "booking_url": "https://www.1mg.com/labs/home"},
-      {"provider_name": "Dr Lal PathLabs", "price_inr": 350, "booking_url": "https://www.lalpathlabs.com"},
-      {"provider_name": "Redcliffe Labs", "price_inr": 299, "booking_url": "https://redcliffelabs.com"}
-    ]
+    "id": 1,
+    "provider": "THYROCARE",
+    "discountBadge": "SAVE 59%",
+    "title": "Executive Full Body Health Checkup",
+    "description": "Complete screening of liver, kidney, thyroid, heart, and hemogram with 82 vital bio-parameters.",
+    "testsIncluded": ["Lipid Profile", "Liver Function (LFT)", "Thyroid (T3/T4/TSH)", "Kidney (KFT)"],
+    "sampleType": "Blood & Urine",
+    "category": "Health Package"
   },
   {
-    "test_name": "Executive Full Body Checkup",
-    "category": "Health Package",
-    "description": "Comprehensive screening of liver, kidney, thyroid, heart, and metabolic parameters.",
-    "comparisons": [
-      {"provider_name": "Thyrocare", "price_inr": 999, "booking_url": "https://www.thyrocare.com"},
-      {"provider_name": "Tata 1mg", "price_inr": 1299, "booking_url": "https://www.1mg.com/labs/home"},
-      {"provider_name": "Redcliffe Labs", "price_inr": 997, "booking_url": "https://redcliffelabs.com"}
-    ]
+    "id": 2,
+    "provider": "DR LAL PATHLABS",
+    "discountBadge": "SAVE 55%",
+    "title": "Complete Hemogram & Diabetes Screen",
+    "description": "Vital screen checking HbA1c, fasting blood glucose, and complete blood count (CBC) profiles.",
+    "testsIncluded": ["HbA1c", "Fasting Glucose", "Complete Blood Count (CBC)"],
+    "sampleType": "Blood",
+    "category": "Diabetes"
   }
 ]
-Return strictly the raw JSON string array. Do not include markdown code block backticks (\`\`\`json) or prose text.`;
+Return strictly the raw JSON array containing exactly 3 items. Do not wrap in markdown code blocks.`;
 
         const payload = {
           contents: [{
             parts: [{
               text: promptText
             }]
-          }]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
         };
 
         const response = await fetch(
@@ -161,18 +155,18 @@ Return strictly the raw JSON string array. Do not include markdown code block ba
         const cleanText = aiResponseText.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(cleanText);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const normalized = parsed.map((item: any) => ({
-            test_name: item.test_name || "",
-            category: item.category || "",
+          const normalized = parsed.map((item: any, index: number) => ({
+            id: item.id || index + 1,
+            provider: item.provider || "LAB PROVIDER",
+            discountBadge: item.discountBadge || "SAVE 10%",
+            title: item.title || item.test_name || "Diagnostic Checkup",
             description: item.description || "",
-            comparisons: (item.comparisons || []).map((c: any) => ({
-              provider_name: c.provider_name || c.name || "Provider",
-              price_inr: parsePriceToNumber(c.price_inr),
-              booking_url: c.booking_url || c.url || "#"
-            }))
+            testsIncluded: Array.isArray(item.testsIncluded) ? item.testsIncluded : [],
+            sampleType: item.sampleType || "Blood",
+            category: item.category || "General Health"
           }));
           setRawTests(normalized);
-          toast.success(`Successfully loaded clinical cost comparisons for ${districtVal}, ${stateVal}!`, { icon: "🤖" });
+          toast.success(`Successfully loaded clinical diagnostic packages for ${districtVal}, ${stateVal}!`, { icon: "🤖" });
           setIsLoading(false);
           return;
         }
@@ -191,14 +185,16 @@ Return strictly the raw JSON string array. Do not include markdown code block ba
 
   // Filter lists based on search query and category parameters
   const filteredTests = rawTests.filter(item => {
-    const nameVal = item.test_name || "";
+    const titleVal = item.title || "";
     const categoryVal = item.category || "";
     const descVal = item.description || "";
+    const providerVal = item.provider || "";
     
     const matchesSearch = 
-      nameVal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      titleVal.toLowerCase().includes(searchQuery.toLowerCase()) ||
       categoryVal.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      descVal.toLowerCase().includes(searchQuery.toLowerCase());
+      descVal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      providerVal.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = selectedCategory === "All" || categoryVal.toLowerCase() === selectedCategory.toLowerCase();
     
@@ -340,38 +336,54 @@ Return strictly the raw JSON string array. Do not include markdown code block ba
             </div>
           ) : filteredTests.length > 0 ? (
             /* Render dynamic clinical price comparison cards */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {diagnosticsData.map((test, index) => (
-                <div key={index} className="test-card bg-white p-6 rounded-2xl shadow-lg border border-gray-100 flex flex-col justify-between">
-                  <div>
-                    <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-md uppercase">
-                      {test.category}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {diagnosticsData.map((lab) => (
+                <div key={lab.id} className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
+                  
+                  {/* 1. Header (Provider & Discount) */}
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">
+                      {lab.provider}
                     </span>
-                    <h3 className="text-lg font-bold text-gray-900 mt-3">{test.test_name}</h3>
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-3">Includes: {test.description}</p>
-                    
-                    {/* Nested Comparisons List */}
-                    <div className="mt-6 border-t pt-4 space-y-3">
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Competing Lab Providers</h4>
-                      {test.comparisons?.map((provider, pIdx) => (
-                        <div key={pIdx} className="flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 border border-slate-150/50 p-3.5 rounded-xl transition-all gap-2 flex-wrap">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-extrabold text-slate-800">{provider.provider_name}</span>
-                            <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Home Collection</span>
-                          </div>
-                          
-                          <a 
-                            href={provider.booking_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="bg-blue-600 text-white px-3 py-1 text-xs rounded font-bold hover:bg-blue-700 transition flex items-center gap-1 shrink-0 text-center"
-                          >
-                            Book @ ₹{Number(provider.price_inr).toFixed(2)} ↗
-                          </a>
-                        </div>
+                    <span className="bg-green-50 text-green-600 text-xs font-bold px-2 py-1 rounded border border-green-100 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                      {lab.discountBadge}
+                    </span>
+                  </div>
+
+                  {/* 2. Title & Description */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+                    {lab.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    {lab.description}
+                  </p>
+
+                  {/* 3. TESTS INCLUDED SECTION */}
+                  <div className="mt-auto border-t border-gray-100 pt-4 mb-4">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      Available Tests Included
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {lab.testsIncluded.map((test, index) => (
+                        <span key={index} className="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-blue-100">
+                          {test}
+                        </span>
                       ))}
                     </div>
                   </div>
+                  
+                  {/* 4. BOOK BUTTON (No Price Attached) */}
+                  <button 
+                    onClick={() => {
+                      toast.success(`Booking request submitted for ${lab.title} via ${lab.provider}!`, { icon: "📅" });
+                    }}
+                    className="w-full mt-2 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Book via Partner
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                  </button>
+                  
                 </div>
               ))}
             </div>
