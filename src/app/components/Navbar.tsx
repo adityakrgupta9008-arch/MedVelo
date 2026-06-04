@@ -32,7 +32,6 @@ export function Navbar() {
           <Link to="/hospitals" className="hover:text-[#0B5FA5] transition-colors">Hospitals 🏥</Link>
           <Link to="/diagnostics" className="hover:text-[#0B5FA5] transition-colors">Diagnostics 🧪</Link>
           <Link to="/records" className="hover:text-[#0B5FA5] transition-colors">Digital Vault 🔒</Link>
-          <Link to="/assistant" className="hover:text-[#0B5FA5] transition-colors">AI Assistant 🤖</Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -161,13 +160,6 @@ export function Navbar() {
             className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
           >
             Digital Vault 🔒
-          </Link>
-          <Link 
-            to="/assistant" 
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-bold text-slate-800 hover:text-[#0B5FA5] transition-all"
-          >
-            AI Assistant 🤖
           </Link>
           {!user && (
             <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">

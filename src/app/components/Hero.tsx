@@ -48,12 +48,9 @@ export function Hero() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={handleSOS} variant="danger" size="lg" className="gap-2 shadow-lg shadow-red-500/20">
+                <Button onClick={handleSOS} size="lg" className="gap-2 shadow-lg shadow-red-500/20 bg-red-600 hover:bg-red-700 text-white border-0 cursor-pointer">
                   <AlertTriangle className="w-5 h-5" />
-                  Activate SOS Emergency
-                </Button>
-                <Button onClick={() => navigate('/assistant')} variant="outline" size="lg" className="gap-2 bg-white cursor-pointer">
-                  AI Healthcare Assistance 🤖
+                  🚑 Book Ambulance (SOS)
                 </Button>
               </div>
             </motion.div>
